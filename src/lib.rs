@@ -1,5 +1,6 @@
 pub mod components;
 pub mod config;
+pub mod orbit_camera;
 pub mod spatial;
 pub mod systems;
 

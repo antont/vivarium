@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use vivarium::components::*;
 use vivarium::config::{Colors, Config};
+use vivarium::orbit_camera::{OrbitCamera, orbit_camera_system};
 use vivarium::spatial::SpatialIndex;
 use vivarium::systems::boundary::boundary_force_system;
 use vivarium::systems::brownian::brownian_motion_system;
@@ -28,6 +29,7 @@ fn main() {
             )
                 .chain(),
         )
+        .add_systems(Update, orbit_camera_system)
         .add_systems(PostUpdate, boundary_force_system)
         .run();
 }
@@ -37,10 +39,11 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    // Camera
+    // Orbit camera
     commands.spawn((
         Camera3d::default(),
-        Transform::from_xyz(0.0, 300.0, 400.0).looking_at(Vec3::ZERO, Vec3::Y),
+        Transform::default(),
+        OrbitCamera::default(),
     ));
 
     // Lighting
