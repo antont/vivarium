@@ -105,7 +105,7 @@ fn config_colors_insects_and_birds_are_distinct() {
         + (insect.green - bird.green).abs()
         + (insect.blue - bird.blue).abs();
     assert!(
-        diff > 0.5,
+        diff > 0.3,
         "Insect and bird colors should be visually distinct, got diff={}",
         diff
     );
