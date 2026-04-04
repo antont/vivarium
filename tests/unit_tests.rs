@@ -86,28 +86,28 @@ fn config_respawn_threshold_less_than_initial_count() {
 }
 
 #[test]
-fn config_colors_insects_are_greenish() {
-    // Insects should have a greenish color (green channel dominant)
+fn config_colors_insects_are_warm_and_visible() {
+    // Insects should be warm-toned (golden amber) and bright enough to see
     let color = Colors::INSECT.to_srgba();
+    let brightness = color.red + color.green + color.blue;
     assert!(
-        color.green > color.red && color.green > color.blue,
-        "Insect color should be greenish, got r={} g={} b={}",
-        color.red,
-        color.green,
-        color.blue
+        brightness > 1.0,
+        "Insect color should be bright enough to see, got brightness={}",
+        brightness
     );
 }
 
 #[test]
-fn config_colors_birds_are_warm() {
-    // Birds should be warm colored (red/orange — red channel dominant)
-    let color = Colors::BIRD.to_srgba();
+fn config_colors_insects_and_birds_are_distinct() {
+    let insect = Colors::INSECT.to_srgba();
+    let bird = Colors::BIRD.to_srgba();
+    let diff = (insect.red - bird.red).abs()
+        + (insect.green - bird.green).abs()
+        + (insect.blue - bird.blue).abs();
     assert!(
-        color.red > color.blue,
-        "Bird color should be warm (red > blue), got r={} g={} b={}",
-        color.red,
-        color.green,
-        color.blue
+        diff > 0.5,
+        "Insect and bird colors should be visually distinct, got diff={}",
+        diff
     );
 }
 

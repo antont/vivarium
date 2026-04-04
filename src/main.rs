@@ -15,6 +15,7 @@ use rand::Rng;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
+        .insert_resource(ClearColor(Colors::BACKGROUND))
         .insert_resource(SpatialIndex::new(Config::SPATIAL_CELL_SIZE))
         .add_systems(Startup, setup)
         .add_systems(
