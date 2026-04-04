@@ -27,6 +27,19 @@ impl Config {
     pub const COHESION_WEIGHT: f32 = 1.0;
     pub const SEPARATION_DISTANCE: f32 = 10.0;
 
+    // Insect swarm cohesion
+    pub const SWARM_COHESION_RADIUS: f32 = 30.0;
+    pub const SWARM_COHESION_WEIGHT: f32 = 0.5;
+
+    // Bird hunting
+    pub const HUNT_CIRCLE_DURATION: f32 = 1.5;  // seconds circling before dive
+    pub const HUNT_CIRCLE_RADIUS: f32 = 25.0;
+    pub const HUNT_DIVE_SPEED_MULT: f32 = 1.8;  // speed multiplier during dive
+    pub const HUNT_DIVE_DISTANCE: f32 = 8.0;    // close enough to switch to dive
+
+    // Bird wandering
+    pub const BIRD_WANDER_STRENGTH: f32 = 15.0;  // degrees per frame when searching
+
     // Boundary force field
     pub const BOUNDARY_MARGIN: f32 = 40.0;  // distance from edge where force kicks in
     pub const BOUNDARY_FORCE: f32 = 5.0;    // steering strength

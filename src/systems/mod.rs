@@ -3,6 +3,8 @@ pub mod brownian;
 pub mod eating;
 pub mod face_velocity;
 pub mod flocking;
+pub mod hunt;
 pub mod movement;
 pub mod predator;
 pub mod spatial_update;
+pub mod swarm_cohesion;
