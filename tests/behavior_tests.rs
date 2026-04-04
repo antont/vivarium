@@ -31,19 +31,19 @@ fn swarm_cohesion_steers_lone_insect_toward_group() {
         weight: Config::SWARM_COHESION_WEIGHT,
     };
 
-    // Lone insect moving away from group
+    // Lone insect heading +X, group is to the +Y side
     let lone = app.world_mut().spawn((
         Insect,
-        Transform::from_translation(Vec3::new(25.0, 0.0, 0.0)),
+        Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
         Velocity(Vec3::X * Config::INSECT_SPEED),
         cohesion.clone(),
     )).id();
 
-    // Cluster of insects near origin
+    // Cluster of insects offset in +Y
     for i in 0..5 {
         app.world_mut().spawn((
             Insect,
-            Transform::from_translation(Vec3::new(i as f32, 0.0, 0.0)),
+            Transform::from_translation(Vec3::new(0.0, 10.0 + i as f32, 0.0)),
             Velocity(Vec3::Y * Config::INSECT_SPEED),
             cohesion.clone(),
         ));
@@ -52,11 +52,11 @@ fn swarm_cohesion_steers_lone_insect_toward_group() {
     app.update();
 
     let vel = app.world().get::<Velocity>(lone).unwrap().0;
-    // Should steer back toward group — vx should decrease from pure +X
+    // Should steer toward +Y group — vy should become positive
     assert!(
-        vel.x < Config::INSECT_SPEED,
-        "Cohesion should steer lone insect toward group. Got vx={}",
-        vel.x
+        vel.y > 0.0,
+        "Cohesion should steer lone insect toward group. Got vy={}",
+        vel.y
     );
 }
 

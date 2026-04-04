@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use std::collections::HashSet;
-use crate::components::{Bird, Insect, Velocity};
+use crate::components::{Bird, Insect};
 use crate::config::Config;
 use crate::spatial::SpatialIndex;
 

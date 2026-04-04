@@ -9,8 +9,9 @@ use vivarium::systems::brownian::brownian_motion_system;
 use vivarium::systems::eating::eating_system;
 use vivarium::systems::flocking::flocking_system;
 use vivarium::systems::movement::movement_system;
-use vivarium::systems::predator::predator_sight_system;
+use vivarium::systems::hunt::hunt_system;
 use vivarium::systems::spatial_update::rebuild_spatial_index;
+use vivarium::systems::swarm_cohesion::swarm_cohesion_system;
 use rand::Rng;
 
 fn main() {
@@ -23,8 +24,8 @@ fn main() {
             Update,
             (
                 rebuild_spatial_index,
-                (brownian_motion_system, flocking_system),
-                predator_sight_system,
+                (brownian_motion_system, swarm_cohesion_system, flocking_system),
+                hunt_system,
                 movement_system,
                 face_velocity_system,
                 eating_system,
@@ -102,6 +103,10 @@ fn setup(
             BrownianMotion {
                 wander_strength: Config::INSECT_WANDER_STRENGTH,
             },
+            SwarmCohesion {
+                radius: Config::SWARM_COHESION_RADIUS,
+                weight: Config::SWARM_COHESION_WEIGHT,
+            },
             BoundaryWrap,
             Mesh3d(insect_mesh.clone()),
             MeshMaterial3d(insect_material.clone()),
@@ -130,6 +135,8 @@ fn setup(
                 alignment_weight: Config::ALIGNMENT_WEIGHT,
                 cohesion_weight: Config::COHESION_WEIGHT,
             },
+            HuntState::default(),
+            Wander { strength: Config::BIRD_WANDER_STRENGTH },
             BoundaryWrap,
             Mesh3d(bird_mesh.clone()),
             MeshMaterial3d(bird_material.clone()),
@@ -185,6 +192,10 @@ fn insect_respawn_system(
             Velocity(direction * Config::INSECT_SPEED),
             BrownianMotion {
                 wander_strength: Config::INSECT_WANDER_STRENGTH,
+            },
+            SwarmCohesion {
+                radius: Config::SWARM_COHESION_RADIUS,
+                weight: Config::SWARM_COHESION_WEIGHT,
             },
             BoundaryWrap,
             Mesh3d(mesh_handle.0.clone()),
