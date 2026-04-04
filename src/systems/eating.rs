@@ -26,11 +26,3 @@ pub fn eating_system(
     }
 }
 
-pub fn insect_respawn_system(
-    _commands: Commands,
-    _insects: Query<&Insect>,
-    _meshes: ResMut<Assets<Mesh>>,
-    _materials: ResMut<Assets<StandardMaterial>>,
-) {
-    // Will be implemented with spawning system
-}
