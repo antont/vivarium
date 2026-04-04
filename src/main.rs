@@ -67,13 +67,11 @@ fn setup(
         ..default()
     });
 
-    // Narrow triangle pointing along +Z (forward), then face_toward_velocity rotates it
-    let r = Config::BIRD_RADIUS;
-    let bird_mesh = meshes.add(Triangle3d::new(
-        Vec3::new(0.0, 0.0, r * 2.0),     // nose (forward)
-        Vec3::new(-r * 0.4, 0.0, -r),     // left rear
-        Vec3::new(r * 0.4, 0.0, -r),      // right rear
-    ));
+    // Cone as bird body — tip points along +Y, face_velocity rotates it
+    let bird_mesh = meshes.add(Cone {
+        radius: Config::BIRD_RADIUS * 0.4,
+        height: Config::BIRD_RADIUS * 2.5,
+    });
     let bird_material = materials.add(StandardMaterial {
         base_color: Colors::BIRD,
         unlit: true,

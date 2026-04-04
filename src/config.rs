@@ -17,7 +17,7 @@ impl Config {
     pub const BIRD_SPEED: f32 = 60.0;
     pub const BIRD_SIGHT_RANGE: f32 = 80.0;
     pub const BIRD_SIGHT_HALF_ANGLE: f32 = 0.7; // ~40 degrees
-    pub const BIRD_RADIUS: f32 = 4.0;
+    pub const BIRD_RADIUS: f32 = 5.0;
     pub const BIRD_EATING_DISTANCE: f32 = 3.0;
 
     // Flocking
