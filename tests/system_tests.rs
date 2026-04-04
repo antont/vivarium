@@ -1,14 +1,14 @@
 use bevy::prelude::*;
-use ecology::components::*;
-use ecology::config::Config;
-use ecology::spatial::SpatialIndex;
-use ecology::systems::boundary::boundary_wrap_system;
-use ecology::systems::brownian::brownian_motion_system;
-use ecology::systems::eating::eating_system;
-use ecology::systems::flocking::flocking_system;
-use ecology::systems::movement::movement_system;
-use ecology::systems::predator::predator_sight_system;
-use ecology::systems::spatial_update::rebuild_spatial_index;
+use vivarium::components::*;
+use vivarium::config::Config;
+use vivarium::spatial::SpatialIndex;
+use vivarium::systems::boundary::boundary_wrap_system;
+use vivarium::systems::brownian::brownian_motion_system;
+use vivarium::systems::eating::eating_system;
+use vivarium::systems::flocking::flocking_system;
+use vivarium::systems::movement::movement_system;
+use vivarium::systems::predator::predator_sight_system;
+use vivarium::systems::spatial_update::rebuild_spatial_index;
 
 use bevy::time::TimeUpdateStrategy;
 

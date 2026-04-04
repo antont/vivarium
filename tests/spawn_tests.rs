@@ -1,12 +1,12 @@
 use bevy::prelude::*;
-use ecology::components::*;
-use ecology::config::Config;
-use ecology::spatial::SpatialIndex;
+use vivarium::components::*;
+use vivarium::config::Config;
+use vivarium::spatial::SpatialIndex;
 
 // We test the spawning functions directly, not the full App with rendering.
 // The spawn functions will be public in lib.rs for testability.
-use ecology::spawn_insects;
-use ecology::spawn_birds;
+use vivarium::spawn_insects;
+use vivarium::spawn_birds;
 
 // =============================================================
 // Insect spawning tests

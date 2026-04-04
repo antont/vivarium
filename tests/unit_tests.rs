@@ -1,7 +1,7 @@
 use bevy::prelude::*;
-use ecology::components::*;
-use ecology::config::{Colors, Config};
-use ecology::spatial::SpatialIndex;
+use vivarium::components::*;
+use vivarium::config::{Colors, Config};
+use vivarium::spatial::SpatialIndex;
 
 // =============================================================
 // Config tests — verify simulation constants are sensible
