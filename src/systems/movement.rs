@@ -2,8 +2,11 @@ use bevy::prelude::*;
 use crate::components::Velocity;
 
 pub fn movement_system(
-    _time: Res<Time>,
-    _query: Query<(&Velocity, &mut Transform)>,
+    time: Res<Time>,
+    mut query: Query<(&Velocity, &mut Transform)>,
 ) {
-    // NOT IMPLEMENTED
+    let dt = time.delta_secs();
+    for (velocity, mut transform) in &mut query {
+        transform.translation += velocity.0 * dt;
+    }
 }

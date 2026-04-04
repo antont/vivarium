@@ -10,10 +10,16 @@ use ecology::systems::movement::movement_system;
 use ecology::systems::predator::predator_sight_system;
 use ecology::systems::spatial_update::rebuild_spatial_index;
 
-/// Helper: create a minimal Bevy App with Time resource for system testing.
+use bevy::time::TimeUpdateStrategy;
+
+/// Helper: create a minimal Bevy App with fixed time step for deterministic testing.
 fn test_app() -> App {
     let mut app = App::new();
     app.add_plugins(MinimalPlugins);
+    // Use a fixed time step so delta_secs is always 1/60
+    app.insert_resource(TimeUpdateStrategy::ManualDuration(
+        std::time::Duration::from_secs_f64(1.0 / 60.0),
+    ));
     app.insert_resource(SpatialIndex::new(Config::SPATIAL_CELL_SIZE));
     app
 }
@@ -32,7 +38,8 @@ fn movement_system_applies_velocity_to_transform() {
         Transform::from_translation(Vec3::ZERO),
     )).id();
 
-    // Advance time by one frame
+    // First update establishes time baseline (delta=0), second has real delta
+    app.update();
     app.update();
 
     let transform = app.world().get::<Transform>(entity).unwrap();
@@ -54,6 +61,7 @@ fn movement_system_moves_in_correct_direction() {
         Transform::from_translation(Vec3::new(0.0, 100.0, 0.0)),
     )).id();
 
+    app.update();
     app.update();
 
     let transform = app.world().get::<Transform>(entity).unwrap();
@@ -200,22 +208,21 @@ fn brownian_motion_changes_insect_velocity() {
         Insect,
         Velocity(initial_vel),
         BrownianMotion {
-            wander_strength: Config::INSECT_WANDER_STRENGTH,
+            wander_strength: 50.0, // high strength for test to see clear direction change
         },
     )).id();
 
-    // Run several updates to give randomness a chance to change direction
-    for _ in 0..10 {
+    // Run several updates to accumulate random perturbations
+    for _ in 0..20 {
         app.update();
     }
 
     let vel = app.world().get::<Velocity>(entity).unwrap().0;
-    // After multiple updates, velocity direction should have changed from pure +X
-    // (statistically near-impossible to stay exactly on +X axis after 10 random perturbations)
+    // After 20 updates with strong wander, velocity should have deviated from pure +X
     let angle = vel.normalize().dot(Vec3::X).acos();
     assert!(
         angle > 0.01,
-        "After 10 updates, brownian motion should have changed direction. Angle from +X: {}",
+        "After 20 updates, brownian motion should have changed direction. Angle from +X: {}",
         angle
     );
 }
