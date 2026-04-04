@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use vivarium::components::*;
 use vivarium::config::{Colors, Config};
+use vivarium::lsystem_tree::spawn_tree;
 use vivarium::orbit_camera::{OrbitCamera, orbit_camera_system};
 use vivarium::spatial::SpatialIndex;
 use vivarium::systems::boundary::boundary_force_system;
@@ -59,6 +60,24 @@ fn setup(
         },
         Transform::from_rotation(Quat::from_euler(EulerRot::XYZ, -0.5, 0.5, 0.0)),
     ));
+
+    // Ground plane at bottom of world
+    let ground_size = Config::WORLD_HALF_SIZE * 2.0;
+    commands.spawn((
+        Mesh3d(meshes.add(Plane3d::new(Vec3::Y, Vec2::splat(ground_size / 2.0)))),
+        MeshMaterial3d(materials.add(StandardMaterial {
+            base_color: Colors::GROUND,
+            perceptual_roughness: 1.0,
+            ..default()
+        })),
+        Transform::from_translation(Vec3::new(0.0, -Config::WORLD_HALF_SIZE, 0.0)),
+    ));
+
+    // L-system trees growing from the ground
+    let ground_y = -Config::WORLD_HALF_SIZE;
+    spawn_tree(&mut commands, &mut meshes, &mut materials, Vec3::new(0.0, ground_y, 0.0), 1.0);
+    spawn_tree(&mut commands, &mut meshes, &mut materials, Vec3::new(-80.0, ground_y, 60.0), 0.8);
+    spawn_tree(&mut commands, &mut meshes, &mut materials, Vec3::new(50.0, ground_y, -70.0), 1.2);
 
     // Shared meshes and materials
     let insect_mesh = meshes.add(Sphere::new(Config::INSECT_RADIUS));

@@ -58,4 +58,5 @@ impl Colors {
     pub const INSECT: Color = Color::srgb(0.15, 0.15, 0.15);  // dark but visible
     pub const BIRD: Color = Color::srgb(0.6, 0.48, 0.38);      // light brown
     pub const BACKGROUND: Color = Color::srgb(0.88, 0.92, 0.97); // pale sky white
+    pub const GROUND: Color = Color::srgb(0.35, 0.45, 0.25);       // muted green
 }
