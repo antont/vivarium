@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use vivarium::components::*;
 use vivarium::config::{Colors, Config};
 use vivarium::spatial::SpatialIndex;
-use vivarium::systems::boundary::boundary_wrap_system;
+use vivarium::systems::boundary::boundary_force_system;
 use vivarium::systems::brownian::brownian_motion_system;
 use vivarium::systems::eating::eating_system;
 use vivarium::systems::flocking::flocking_system;
@@ -28,7 +28,7 @@ fn main() {
             )
                 .chain(),
         )
-        .add_systems(PostUpdate, boundary_wrap_system)
+        .add_systems(PostUpdate, boundary_force_system)
         .run();
 }
 

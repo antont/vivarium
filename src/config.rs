@@ -9,7 +9,7 @@ impl Config {
     // Insects
     pub const INSECT_COUNT: usize = 200;
     pub const INSECT_SPEED: f32 = 30.0;
-    pub const INSECT_WANDER_STRENGTH: f32 = 2.0;
+    pub const INSECT_WANDER_STRENGTH: f32 = 5.0; // max degrees rotation per frame
     pub const INSECT_RADIUS: f32 = 0.3;
 
     // Birds
@@ -26,6 +26,10 @@ impl Config {
     pub const ALIGNMENT_WEIGHT: f32 = 1.0;
     pub const COHESION_WEIGHT: f32 = 1.0;
     pub const SEPARATION_DISTANCE: f32 = 10.0;
+
+    // Boundary force field
+    pub const BOUNDARY_MARGIN: f32 = 40.0;  // distance from edge where force kicks in
+    pub const BOUNDARY_FORCE: f32 = 5.0;    // steering strength
 
     // Spatial index
     pub const SPATIAL_CELL_SIZE: f32 = 40.0;

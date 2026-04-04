@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use vivarium::components::*;
 use vivarium::config::Config;
 use vivarium::spatial::SpatialIndex;
-use vivarium::systems::boundary::boundary_wrap_system;
+use vivarium::systems::boundary::boundary_force_system;
 use vivarium::systems::brownian::brownian_motion_system;
 use vivarium::systems::eating::eating_system;
 use vivarium::systems::flocking::flocking_system;
@@ -92,105 +92,131 @@ fn movement_system_does_not_move_entities_without_velocity() {
 }
 
 // =============================================================
-// Boundary wrap system tests
+// Boundary force field system tests
 // =============================================================
 
 #[test]
-fn boundary_wrap_wraps_entity_past_positive_x() {
+fn boundary_steers_entity_away_from_positive_edge() {
     let mut app = test_app();
-    app.add_systems(Update, boundary_wrap_system);
+    app.add_systems(Update, boundary_force_system);
 
     let half = Config::WORLD_HALF_SIZE;
+    // Entity near +X edge, heading toward it
     let entity = app.world_mut().spawn((
-        Transform::from_translation(Vec3::new(half + 10.0, 0.0, 0.0)),
+        Transform::from_translation(Vec3::new(half - 10.0, 0.0, 0.0)),
+        Velocity(Vec3::X * 30.0),
         BoundaryWrap,
     )).id();
 
     app.update();
 
-    let pos = app.world().get::<Transform>(entity).unwrap().translation;
+    let vel = app.world().get::<Velocity>(entity).unwrap().0;
     assert!(
-        pos.x < 0.0,
-        "Entity past +X boundary should wrap to negative X, got x={}",
-        pos.x
+        vel.x < 30.0,
+        "Boundary force should steer entity away from +X edge, got vx={}",
+        vel.x
     );
 }
 
 #[test]
-fn boundary_wrap_wraps_entity_past_negative_y() {
+fn boundary_steers_entity_away_from_negative_edge() {
     let mut app = test_app();
-    app.add_systems(Update, boundary_wrap_system);
+    app.add_systems(Update, boundary_force_system);
 
     let half = Config::WORLD_HALF_SIZE;
     let entity = app.world_mut().spawn((
-        Transform::from_translation(Vec3::new(0.0, -half - 10.0, 0.0)),
+        Transform::from_translation(Vec3::new(0.0, -half + 10.0, 0.0)),
+        Velocity(Vec3::new(0.0, -30.0, 0.0)),
         BoundaryWrap,
     )).id();
 
     app.update();
 
-    let pos = app.world().get::<Transform>(entity).unwrap().translation;
+    let vel = app.world().get::<Velocity>(entity).unwrap().0;
     assert!(
-        pos.y > 0.0,
-        "Entity past -Y boundary should wrap to positive Y, got y={}",
-        pos.y
+        vel.y > -30.0,
+        "Boundary force should steer entity away from -Y edge, got vy={}",
+        vel.y
     );
 }
 
 #[test]
-fn boundary_wrap_wraps_z_axis() {
+fn boundary_force_works_on_z_axis() {
     let mut app = test_app();
-    app.add_systems(Update, boundary_wrap_system);
+    app.add_systems(Update, boundary_force_system);
 
     let half = Config::WORLD_HALF_SIZE;
     let entity = app.world_mut().spawn((
-        Transform::from_translation(Vec3::new(0.0, 0.0, half + 5.0)),
+        Transform::from_translation(Vec3::new(0.0, 0.0, half - 5.0)),
+        Velocity(Vec3::Z * 30.0),
         BoundaryWrap,
     )).id();
 
     app.update();
 
-    let pos = app.world().get::<Transform>(entity).unwrap().translation;
+    let vel = app.world().get::<Velocity>(entity).unwrap().0;
     assert!(
-        pos.z < 0.0,
-        "Entity past +Z boundary should wrap to negative Z, got z={}",
-        pos.z
+        vel.z < 30.0,
+        "Boundary force should steer entity away from +Z edge, got vz={}",
+        vel.z
     );
 }
 
 #[test]
-fn boundary_wrap_does_not_affect_entity_inside_bounds() {
+fn boundary_force_does_not_affect_entity_near_center() {
     let mut app = test_app();
-    app.add_systems(Update, boundary_wrap_system);
+    app.add_systems(Update, boundary_force_system);
 
+    let initial_vel = Vec3::new(10.0, -20.0, 5.0);
     let entity = app.world_mut().spawn((
-        Transform::from_translation(Vec3::new(50.0, -30.0, 10.0)),
+        Transform::from_translation(Vec3::ZERO),
+        Velocity(initial_vel),
         BoundaryWrap,
     )).id();
 
     app.update();
 
-    let pos = app.world().get::<Transform>(entity).unwrap().translation;
-    assert_eq!(pos, Vec3::new(50.0, -30.0, 10.0), "Inside-bounds entity should not move");
+    let vel = app.world().get::<Velocity>(entity).unwrap().0;
+    assert_eq!(vel, initial_vel, "Entity near center should not be affected by boundary force");
 }
 
 #[test]
-fn boundary_wrap_does_not_affect_entity_without_marker() {
+fn boundary_force_does_not_affect_entity_without_marker() {
     let mut app = test_app();
-    app.add_systems(Update, boundary_wrap_system);
+    app.add_systems(Update, boundary_force_system);
 
     let half = Config::WORLD_HALF_SIZE;
-    let entity = app.world_mut().spawn(
+    let initial_vel = Vec3::X * 30.0;
+    let entity = app.world_mut().spawn((
+        Transform::from_translation(Vec3::new(half - 5.0, 0.0, 0.0)),
+        Velocity(initial_vel),
+    )).id();
+
+    app.update();
+
+    let vel = app.world().get::<Velocity>(entity).unwrap().0;
+    assert_eq!(vel, initial_vel, "Entity without BoundaryWrap should not be steered");
+}
+
+#[test]
+fn boundary_hard_clamps_position_if_already_outside() {
+    let mut app = test_app();
+    app.add_systems(Update, boundary_force_system);
+
+    let half = Config::WORLD_HALF_SIZE;
+    let entity = app.world_mut().spawn((
         Transform::from_translation(Vec3::new(half + 50.0, 0.0, 0.0)),
-    ).id();
+        Velocity(Vec3::X * 30.0),
+        BoundaryWrap,
+    )).id();
 
     app.update();
 
     let pos = app.world().get::<Transform>(entity).unwrap().translation;
-    assert_eq!(
-        pos.x,
-        half + 50.0,
-        "Entity without BoundaryWrap should not be wrapped"
+    assert!(
+        pos.x <= half,
+        "Entity outside bounds should be clamped back inside, got x={}",
+        pos.x
     );
 }
 
