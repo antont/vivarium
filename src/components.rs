@@ -26,7 +26,7 @@ pub struct Predator {
 }
 
 /// Boids flocking behavior parameters.
-#[derive(Component)]
+#[derive(Component, Clone)]
 pub struct Flocking {
     pub separation_weight: f32,
     pub alignment_weight: f32,
