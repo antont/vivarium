@@ -42,7 +42,7 @@ impl Config {
 pub struct Colors;
 
 impl Colors {
-    pub const INSECT: Color = Color::srgb(0.85, 0.7, 0.35);  // warm golden amber
-    pub const BIRD: Color = Color::srgb(0.75, 0.55, 0.6);     // muted rose
-    pub const BACKGROUND: Color = Color::srgb(0.12, 0.14, 0.22); // deep twilight
+    pub const INSECT: Color = Color::srgb(0.08, 0.08, 0.08);  // near black
+    pub const BIRD: Color = Color::srgb(0.45, 0.38, 0.32);    // grey-brown
+    pub const BACKGROUND: Color = Color::srgb(0.55, 0.75, 0.92); // light blue sky
 }

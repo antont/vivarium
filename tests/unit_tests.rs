@@ -86,14 +86,17 @@ fn config_respawn_threshold_less_than_initial_count() {
 }
 
 #[test]
-fn config_colors_insects_are_warm_and_visible() {
-    // Insects should be warm-toned (golden amber) and bright enough to see
-    let color = Colors::INSECT.to_srgba();
-    let brightness = color.red + color.green + color.blue;
+fn config_colors_insects_contrast_with_background() {
+    // Insects should contrast clearly against the background
+    let insect = Colors::INSECT.to_srgba();
+    let bg = Colors::BACKGROUND.to_srgba();
+    let diff = (insect.red - bg.red).abs()
+        + (insect.green - bg.green).abs()
+        + (insect.blue - bg.blue).abs();
     assert!(
-        brightness > 1.0,
-        "Insect color should be bright enough to see, got brightness={}",
-        brightness
+        diff > 1.0,
+        "Insect color should contrast with background, got diff={}",
+        diff
     );
 }
 
