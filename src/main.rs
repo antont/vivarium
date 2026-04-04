@@ -4,6 +4,7 @@ use vivarium::config::{Colors, Config};
 use vivarium::orbit_camera::{OrbitCamera, orbit_camera_system};
 use vivarium::spatial::SpatialIndex;
 use vivarium::systems::boundary::boundary_force_system;
+use vivarium::systems::face_velocity::face_velocity_system;
 use vivarium::systems::brownian::brownian_motion_system;
 use vivarium::systems::eating::eating_system;
 use vivarium::systems::flocking::flocking_system;
@@ -25,6 +26,7 @@ fn main() {
                 (brownian_motion_system, flocking_system),
                 predator_sight_system,
                 movement_system,
+                face_velocity_system,
                 eating_system,
                 insect_respawn_system,
             )
@@ -65,10 +67,17 @@ fn setup(
         ..default()
     });
 
-    let bird_mesh = meshes.add(Sphere::new(Config::BIRD_RADIUS));
+    // Narrow triangle pointing along +Z (forward), then face_toward_velocity rotates it
+    let r = Config::BIRD_RADIUS;
+    let bird_mesh = meshes.add(Triangle3d::new(
+        Vec3::new(0.0, 0.0, r * 2.0),     // nose (forward)
+        Vec3::new(-r * 0.4, 0.0, -r),     // left rear
+        Vec3::new(r * 0.4, 0.0, -r),      // right rear
+    ));
     let bird_material = materials.add(StandardMaterial {
         base_color: Colors::BIRD,
         unlit: true,
+        cull_mode: None, // visible from both sides
         ..default()
     });
 
