@@ -10,14 +10,14 @@ impl Config {
     pub const INSECT_COUNT: usize = 200;
     pub const INSECT_SPEED: f32 = 8.0;
     pub const INSECT_WANDER_STRENGTH: f32 = 45.0; // max degrees rotation per frame
-    pub const INSECT_RADIUS: f32 = 0.3;
+    pub const INSECT_RADIUS: f32 = 1.2;
 
     // Birds
     pub const BIRD_COUNT: usize = 20;
     pub const BIRD_SPEED: f32 = 60.0;
     pub const BIRD_SIGHT_RANGE: f32 = 80.0;
     pub const BIRD_SIGHT_HALF_ANGLE: f32 = 0.7; // ~40 degrees
-    pub const BIRD_RADIUS: f32 = 1.0;
+    pub const BIRD_RADIUS: f32 = 4.0;
     pub const BIRD_EATING_DISTANCE: f32 = 3.0;
 
     // Flocking
