@@ -8,8 +8,9 @@ pub fn face_velocity_system(
     for (velocity, mut transform) in &mut query {
         let dir = velocity.0.normalize_or_zero();
         if dir != Vec3::ZERO {
-            // Triangle mesh points along +Z, so look toward velocity
-            let look_target = transform.translation + dir;
+            // look_at points -Z toward target, so look away from velocity
+            // to make the +Z nose point forward
+            let look_target = transform.translation - dir;
             transform.look_at(look_target, Vec3::Y);
         }
     }
