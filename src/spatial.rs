@@ -20,8 +20,9 @@ impl SpatialIndex {
         self.map.clear();
     }
 
-    pub fn insert(&mut self, _entity: Entity, _position: Vec3) {
-        // NOT IMPLEMENTED
+    pub fn insert(&mut self, entity: Entity, position: Vec3) {
+        let key = self.cell_key(position);
+        self.map.entry(key).or_default().push(entity);
     }
 
     fn cell_key(&self, pos: Vec3) -> (i32, i32, i32) {
@@ -33,7 +34,19 @@ impl SpatialIndex {
     }
 
     /// Returns all entities in the 3x3x3 neighborhood of cells around the given position.
-    pub fn get_nearby(&self, _position: Vec3) -> Vec<Entity> {
-        Vec::new() // NOT IMPLEMENTED
+    pub fn get_nearby(&self, position: Vec3) -> Vec<Entity> {
+        let center = self.cell_key(position);
+        let mut result = Vec::new();
+        for dx in -1..=1 {
+            for dy in -1..=1 {
+                for dz in -1..=1 {
+                    let key = (center.0 + dx, center.1 + dy, center.2 + dz);
+                    if let Some(entities) = self.map.get(&key) {
+                        result.extend(entities);
+                    }
+                }
+            }
+        }
+        result
     }
 }
