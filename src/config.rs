@@ -8,7 +8,7 @@ impl Config {
 
     // Insects
     pub const INSECT_COUNT: usize = 200;
-    pub const INSECT_SPEED: f32 = 5.0;
+    pub const INSECT_SPEED: f32 = 8.0;
     pub const INSECT_WANDER_STRENGTH: f32 = 45.0; // max degrees rotation per frame
     pub const INSECT_RADIUS: f32 = 0.3;
 
