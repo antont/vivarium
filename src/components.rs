@@ -82,3 +82,35 @@ pub struct TreeSegment;
 /// Stores the spawn-time local rotation so wind tilt can be added on top.
 #[derive(Component)]
 pub struct BaseLocalRotation(pub Quat);
+
+/// Marker for squirrel entities.
+#[derive(Component)]
+pub struct Squirrel;
+
+/// Squirrel behavior state machine.
+#[derive(Component)]
+pub struct SquirrelState {
+    pub phase: SquirrelPhase,
+    pub path: Vec<usize>,      // nav node indices
+    pub path_index: usize,     // current position in path
+    pub progress: f32,         // 0..1 lerp between current and next node
+    pub timer: f32,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum SquirrelPhase {
+    Idle,
+    Moving,
+}
+
+impl Default for SquirrelState {
+    fn default() -> Self {
+        Self {
+            phase: SquirrelPhase::Idle,
+            path: Vec::new(),
+            path_index: 0,
+            progress: 0.0,
+            timer: 0.0,
+        }
+    }
+}

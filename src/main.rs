@@ -2,7 +2,9 @@ use bevy::prelude::*;
 use vivarium::components::*;
 use vivarium::config::{Colors, Config};
 use vivarium::lsystem_tree::spawn_tree;
+use vivarium::nav_graph::NavGraph;
 use vivarium::orbit_camera::{OrbitCamera, orbit_camera_system};
+use vivarium::squirrel::{spawn_squirrel, squirrel_behavior_system, squirrel_movement_system};
 use vivarium::spatial::SpatialIndex;
 use vivarium::systems::boundary::boundary_force_system;
 use vivarium::systems::face_velocity::face_velocity_system;
@@ -38,7 +40,7 @@ fn main() {
             )
                 .chain(),
         )
-        .add_systems(Update, (orbit_camera_system, wind_indicator_system))
+        .add_systems(Update, (orbit_camera_system, wind_indicator_system, squirrel_behavior_system, squirrel_movement_system))
         .add_systems(PostUpdate, boundary_force_system)
         .run();
 }
@@ -77,11 +79,22 @@ fn setup(
         Transform::from_translation(Vec3::new(0.0, -Config::WORLD_HALF_SIZE, 0.0)),
     ));
 
-    // L-system trees growing from the ground
+    // Build navigation graph and L-system trees
+    let mut nav_graph = NavGraph::new();
     let ground_y = -Config::WORLD_HALF_SIZE;
-    spawn_tree(&mut commands, &mut meshes, &mut materials, Vec3::new(0.0, ground_y, 0.0), 1.0);
-    spawn_tree(&mut commands, &mut meshes, &mut materials, Vec3::new(-80.0, ground_y, 60.0), 0.8);
-    spawn_tree(&mut commands, &mut meshes, &mut materials, Vec3::new(50.0, ground_y, -70.0), 1.2);
+    spawn_tree(&mut commands, &mut meshes, &mut materials, &mut nav_graph, Vec3::new(0.0, ground_y, 0.0), 1.0);
+    spawn_tree(&mut commands, &mut meshes, &mut materials, &mut nav_graph, Vec3::new(-80.0, ground_y, 60.0), 0.8);
+    spawn_tree(&mut commands, &mut meshes, &mut materials, &mut nav_graph, Vec3::new(50.0, ground_y, -70.0), 1.2);
+    nav_graph.build_ground_nodes();
+
+    // Spawn squirrels near tree bases, slightly above ground
+    for i in 0..Config::SQUIRREL_COUNT {
+        let x = [-10.0, -90.0, 40.0][i % 3];
+        let z = [10.0, 70.0, -60.0][i % 3];
+        spawn_squirrel(&mut commands, &mut meshes, &mut materials, Vec3::new(x, ground_y + 3.0, z));
+    }
+
+    commands.insert_resource(nav_graph);
 
     // Shared meshes and materials
     let insect_mesh = meshes.add(Sphere::new(Config::INSECT_RADIUS));

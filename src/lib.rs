@@ -1,8 +1,10 @@
 pub mod components;
 pub mod config;
 pub mod lsystem_tree;
+pub mod nav_graph;
 pub mod orbit_camera;
 pub mod spatial;
+pub mod squirrel;
 pub mod systems;
 pub mod wind;
 

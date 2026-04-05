@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use rand::Rng;
 use crate::components::{BaseLocalRotation, TreeSegment};
+use crate::nav_graph::{NavGraph, NavNodeKind};
 
 /// A simple L-system tree generator.
 /// Rules: F → F[+F]F[-F]F  (branching pattern)
@@ -33,12 +34,12 @@ impl LSystem {
     }
 }
 
-/// Spawn a procedural L-system tree at the given position using parent-child hierarchy.
-/// Each segment is a child of the previous one, so wind rotation accumulates naturally.
+/// Spawn a procedural L-system tree and register nav nodes in the graph.
 pub fn spawn_tree(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
+    nav_graph: &mut NavGraph,
     position: Vec3,
     scale: f32,
 ) {
@@ -69,19 +70,26 @@ pub fn spawn_tree(
     // Root anchor entity at tree base
     let root = commands.spawn(Transform::from_translation(position)).id();
 
+    // Nav node at tree base
+    let base_nav = nav_graph.add_node(position, NavNodeKind::TreeBase);
+
     let mut current_parent = root;
     let mut segment_length = lsystem.length;
     let mut segment_radius = lsystem.radius;
     let mut pending_rotation = Quat::IDENTITY;
     let mut rng = rand::rng();
 
-    // Stack: (parent entity, segment length, radius, pending rotation)
-    let mut stack: Vec<(Entity, f32, f32, Quat)> = Vec::new();
+    // Track world-space position and rotation for nav graph
+    let mut world_pos = position;
+    let mut world_rot = Quat::IDENTITY;
+    let mut current_nav_node = base_nav;
+
+    // Stack: (entity, length, radius, pending_rot, world_pos, world_rot, nav_node)
+    let mut stack: Vec<(Entity, f32, f32, Quat, Vec3, Quat, usize)> = Vec::new();
 
     for ch in instructions.chars() {
         match ch {
             'F' => {
-                // Add slight random wobble
                 let wobble_axis = Vec3::new(
                     rng.random_range(-0.1..0.1),
                     rng.random_range(-0.05..0.05),
@@ -97,9 +105,11 @@ pub fn spawn_tree(
                 let local_rotation = pending_rotation * wobble;
                 pending_rotation = Quat::IDENTITY;
 
-                // Spawn segment as child of current parent.
-                // Local Y = growth direction. The segment entity sits at the
-                // parent's tip and is rotated by accumulated turns.
+                // Update world-space tracking
+                world_rot = world_rot * local_rotation;
+                let tip_world = world_pos + world_rot * Vec3::new(0.0, segment_length, 0.0);
+
+                // Spawn segment entity
                 let segment = commands
                     .spawn((
                         TreeSegment,
@@ -109,7 +119,7 @@ pub fn spawn_tree(
                     .id();
                 commands.entity(current_parent).add_child(segment);
 
-                // Cylinder mesh centered at half-height (visual only, no TreeSegment)
+                // Cylinder mesh
                 let mesh_child = commands
                     .spawn((
                         Mesh3d(meshes.add(Cylinder::new(segment_radius, segment_length))),
@@ -119,7 +129,7 @@ pub fn spawn_tree(
                     .id();
                 commands.entity(segment).add_child(mesh_child);
 
-                // Tip entity at the top of this segment — next segment attaches here
+                // Tip entity
                 let tip = commands
                     .spawn(Transform::from_translation(Vec3::new(
                         0.0,
@@ -130,6 +140,12 @@ pub fn spawn_tree(
                 commands.entity(segment).add_child(tip);
 
                 current_parent = tip;
+
+                // Add nav node at segment tip, linked to the tip entity for live tracking
+                let tip_nav = nav_graph.add_node_with_entity(tip_world, NavNodeKind::Branch, tip);
+                nav_graph.add_edge(current_nav_node, tip_nav);
+                current_nav_node = tip_nav;
+                world_pos = tip_world;
             }
             '+' => {
                 pending_rotation =
@@ -145,10 +161,12 @@ pub fn spawn_tree(
                     segment_length,
                     segment_radius,
                     pending_rotation,
+                    world_pos,
+                    world_rot,
+                    current_nav_node,
                 ));
                 segment_length *= lsystem.shrink;
                 segment_radius *= lsystem.radius_shrink;
-                // Twist around growth axis for 3D spread
                 let twist = Quat::from_axis_angle(Vec3::Y, rng.random_range(0.5..2.5));
                 pending_rotation = twist;
             }
@@ -164,11 +182,14 @@ pub fn spawn_tree(
                     .id();
                 commands.entity(current_parent).add_child(leaf);
 
-                if let Some((parent, len, rad, rot)) = stack.pop() {
+                if let Some((parent, len, rad, rot, wpos, wrot, nav)) = stack.pop() {
                     current_parent = parent;
                     segment_length = len;
                     segment_radius = rad;
                     pending_rotation = rot;
+                    world_pos = wpos;
+                    world_rot = wrot;
+                    current_nav_node = nav;
                 }
             }
             _ => {}

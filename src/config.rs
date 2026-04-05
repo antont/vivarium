@@ -49,6 +49,17 @@ impl Config {
     pub const WIND_DIR_RATE: f32 = 0.1; // direction oscillation rate (rad/s)
     pub const WIND_STR_RATE: f32 = 0.08; // strength oscillation rate (rad/s)
 
+    // Squirrel
+    pub const SQUIRREL_COUNT: usize = 3;
+    pub const SQUIRREL_GROUND_SPEED: f32 = 15.0;
+    pub const SQUIRREL_CLIMB_SPEED: f32 = 8.0;
+    pub const SQUIRREL_IDLE_MIN: f32 = 1.0;
+    pub const SQUIRREL_IDLE_MAX: f32 = 3.0;
+    pub const SQUIRREL_BODY_SCALE: f32 = 5.0;
+
+    // Navigation
+    pub const NAV_GROUND_SPACING: f32 = 40.0;
+
     // Boundary force field
     pub const BOUNDARY_MARGIN: f32 = 40.0; // distance from edge where force kicks in
     pub const BOUNDARY_FORCE: f32 = 5.0; // steering strength
