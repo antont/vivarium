@@ -13,6 +13,7 @@ use vivarium::systems::movement::movement_system;
 use vivarium::systems::hunt::hunt_system;
 use vivarium::systems::spatial_update::rebuild_spatial_index;
 use vivarium::systems::swarm_cohesion::swarm_cohesion_system;
+use vivarium::wind::{Wind, wind_update_system, wind_tree_system, setup_wind_indicator, wind_indicator_system};
 use rand::Rng;
 
 fn main() {
@@ -20,21 +21,24 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .insert_resource(ClearColor(Colors::BACKGROUND))
         .insert_resource(SpatialIndex::new(Config::SPATIAL_CELL_SIZE))
-        .add_systems(Startup, setup)
+        .insert_resource(Wind::default())
+        .add_systems(Startup, (setup, setup_wind_indicator))
         .add_systems(
             Update,
             (
+                wind_update_system,
                 rebuild_spatial_index,
                 (brownian_motion_system, swarm_cohesion_system, flocking_system),
                 hunt_system,
                 movement_system,
+                wind_tree_system,
                 face_velocity_system,
                 eating_system,
                 insect_respawn_system,
             )
                 .chain(),
         )
-        .add_systems(Update, orbit_camera_system)
+        .add_systems(Update, (orbit_camera_system, wind_indicator_system))
         .add_systems(PostUpdate, boundary_force_system)
         .run();
 }

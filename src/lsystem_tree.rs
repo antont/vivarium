@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use rand::Rng;
+use crate::components::{TreeAnchor, TreeSegment};
 
 /// A simple L-system tree generator.
 /// Rules: F → F[+F]F[-F]F  (branching pattern)
@@ -14,10 +15,10 @@ struct Segment {
 struct LSystem {
     axiom: String,
     iterations: usize,
-    angle: f32,       // branch angle in radians
-    length: f32,      // initial segment length
-    shrink: f32,      // length multiplier per generation
-    radius: f32,      // initial branch radius
+    angle: f32,  // branch angle in radians
+    length: f32, // initial segment length
+    shrink: f32, // length multiplier per generation
+    radius: f32, // initial branch radius
     radius_shrink: f32,
 }
 
@@ -118,8 +119,8 @@ pub fn spawn_tree(
     let lsystem = LSystem {
         axiom: "F".to_string(),
         iterations: 3,
-        angle: 0.45,          // ~26 degrees
-        length: 20.0 * scale,
+        angle: 1.2, // ~26 degrees
+        length: 10.0 * scale,
         shrink: 0.65,
         radius: 2.0 * scale,
         radius_shrink: 0.6,
@@ -153,21 +154,34 @@ pub fn spawn_tree(
         // Cylinder is centered at origin along Y axis
         let rotation = Quat::from_rotation_arc(Vec3::Y, dir);
 
+        let world_pos = position + mid;
+        let transform = Transform::from_translation(world_pos).with_rotation(rotation);
         commands.spawn((
             Mesh3d(meshes.add(Cylinder::new(seg.radius, len))),
             MeshMaterial3d(bark_material.clone()),
-            Transform::from_translation(position + mid)
-                .with_rotation(rotation),
+            transform,
+            TreeSegment,
+            TreeAnchor {
+                root: position,
+                local_offset: mid,
+                base_rotation: rotation,
+            },
         ));
     }
 
     // Spawn leaf clusters as spheres at branch tips
     for &leaf_pos in &leaves {
-        let leaf_size = 5.0 * scale;
+        let leaf_size = 2.0 * scale;
         commands.spawn((
             Mesh3d(meshes.add(Sphere::new(leaf_size))),
             MeshMaterial3d(leaf_material.clone()),
             Transform::from_translation(position + leaf_pos),
+            TreeSegment,
+            TreeAnchor {
+                root: position,
+                local_offset: leaf_pos,
+                base_rotation: Quat::IDENTITY,
+            },
         ));
     }
 }

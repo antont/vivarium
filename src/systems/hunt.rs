@@ -3,9 +3,11 @@ use rand::Rng;
 use crate::components::{Bird, HuntPhase, HuntState, Insect, Predator, Velocity, Wander};
 use crate::config::Config;
 use crate::spatial::SpatialIndex;
+use crate::wind::Wind;
 
 pub fn hunt_system(
     time: Res<Time>,
+    wind: Res<Wind>,
     spatial: Res<SpatialIndex>,
     mut birds: Query<(&Transform, &mut Velocity, &Predator, &mut HuntState, &Wander), With<Bird>>,
     insects: Query<(Entity, &Transform), With<Insect>>,
@@ -72,8 +74,9 @@ pub fn hunt_system(
                     hunt.target_pos = target_pos;
                 }
 
-                // Circle around target: steer perpendicular + slightly toward target
-                let to_target = hunt.target_pos - bird_pos;
+                // Circle around target, compensating for wind drift differential
+                let drift = wind.relative_drift();
+                let to_target = (hunt.target_pos + drift * 0.5) - bird_pos;
                 let dist_to_target = to_target.length();
 
                 if dist_to_target > f32::EPSILON {
@@ -105,13 +108,16 @@ pub fn hunt_system(
             }
 
             HuntPhase::Diving => {
-                // Dive straight toward target at boosted speed
+                // Dive toward target, leading by wind drift differential
                 let to_target = hunt.target_pos - bird_pos;
                 let dist = to_target.length();
 
                 if dist > f32::EPSILON {
-                    let dive_dir = to_target / dist;
                     let dive_speed = Config::BIRD_SPEED * Config::HUNT_DIVE_SPEED_MULT;
+                    let time_to_reach = dist / dive_speed;
+                    let drift = wind.relative_drift();
+                    let lead_pos = hunt.target_pos + drift * time_to_reach;
+                    let dive_dir = (lead_pos - bird_pos).normalize_or_zero();
                     velocity.0 = dive_dir * dive_speed;
                 }
 

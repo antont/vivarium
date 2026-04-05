@@ -40,6 +40,15 @@ impl Config {
     // Bird wandering
     pub const BIRD_WANDER_STRENGTH: f32 = 15.0;  // degrees per frame when searching
 
+    // Wind
+    pub const WIND_MAX_STRENGTH: f32 = 6.0;      // max displacement speed (units/s)
+    pub const WIND_BASE_STRENGTH: f32 = 2.0;      // average wind speed
+    pub const WIND_INSECT_FACTOR: f32 = 1.0;      // insects feel full wind
+    pub const WIND_BIRD_FACTOR: f32 = 0.15;       // birds barely affected
+    pub const WIND_TREE_BEND_FACTOR: f32 = 0.02;  // radians per unit of wind strength
+    pub const WIND_DIR_RATE: f32 = 0.1;            // direction oscillation rate (rad/s)
+    pub const WIND_STR_RATE: f32 = 0.08;           // strength oscillation rate (rad/s)
+
     // Boundary force field
     pub const BOUNDARY_MARGIN: f32 = 40.0;  // distance from edge where force kicks in
     pub const BOUNDARY_FORCE: f32 = 5.0;    // steering strength

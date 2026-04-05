@@ -4,6 +4,7 @@ pub mod lsystem_tree;
 pub mod orbit_camera;
 pub mod spatial;
 pub mod systems;
+pub mod wind;
 
 use bevy::prelude::*;
 use rand::Rng;
