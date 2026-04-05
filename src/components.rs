@@ -75,15 +75,10 @@ pub struct Wander {
     pub strength: f32,
 }
 
-/// Marker for tree branch/leaf entities affected by wind.
+/// Marker for tree segment entities affected by wind.
 #[derive(Component)]
 pub struct TreeSegment;
 
-/// Anchor data for wind bending: root position, offset from root, and spawn rotation.
-/// Higher segments (larger offset.y) bend more, creating a natural curve.
+/// Stores the spawn-time local rotation so wind tilt can be added on top.
 #[derive(Component)]
-pub struct TreeAnchor {
-    pub root: Vec3,
-    pub local_offset: Vec3,
-    pub base_rotation: Quat,
-}
+pub struct BaseLocalRotation(pub Quat);

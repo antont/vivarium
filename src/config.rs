@@ -32,26 +32,26 @@ impl Config {
     pub const SWARM_COHESION_WEIGHT: f32 = 0.5;
 
     // Bird hunting
-    pub const HUNT_CIRCLE_DURATION: f32 = 1.5;  // seconds circling before dive
+    pub const HUNT_CIRCLE_DURATION: f32 = 1.5; // seconds circling before dive
     pub const HUNT_CIRCLE_RADIUS: f32 = 25.0;
-    pub const HUNT_DIVE_SPEED_MULT: f32 = 1.8;  // speed multiplier during dive
-    pub const HUNT_DIVE_DISTANCE: f32 = 8.0;    // close enough to switch to dive
+    pub const HUNT_DIVE_SPEED_MULT: f32 = 1.8; // speed multiplier during dive
+    pub const HUNT_DIVE_DISTANCE: f32 = 8.0; // close enough to switch to dive
 
     // Bird wandering
-    pub const BIRD_WANDER_STRENGTH: f32 = 15.0;  // degrees per frame when searching
+    pub const BIRD_WANDER_STRENGTH: f32 = 15.0; // degrees per frame when searching
 
     // Wind
-    pub const WIND_MAX_STRENGTH: f32 = 6.0;      // max displacement speed (units/s)
-    pub const WIND_BASE_STRENGTH: f32 = 2.0;      // average wind speed
-    pub const WIND_INSECT_FACTOR: f32 = 1.0;      // insects feel full wind
-    pub const WIND_BIRD_FACTOR: f32 = 0.15;       // birds barely affected
-    pub const WIND_TREE_BEND_FACTOR: f32 = 0.02;  // radians per unit of wind strength
-    pub const WIND_DIR_RATE: f32 = 0.1;            // direction oscillation rate (rad/s)
-    pub const WIND_STR_RATE: f32 = 0.08;           // strength oscillation rate (rad/s)
+    pub const WIND_MAX_STRENGTH: f32 = 6.0; // max displacement speed (units/s)
+    pub const WIND_BASE_STRENGTH: f32 = 2.0; // average wind speed
+    pub const WIND_INSECT_FACTOR: f32 = 1.0; // insects feel full wind
+    pub const WIND_BIRD_FACTOR: f32 = 0.15; // birds barely affected
+    pub const WIND_TREE_BEND_FACTOR: f32 = 0.004; // radians per unit of wind strength
+    pub const WIND_DIR_RATE: f32 = 0.1; // direction oscillation rate (rad/s)
+    pub const WIND_STR_RATE: f32 = 0.08; // strength oscillation rate (rad/s)
 
     // Boundary force field
-    pub const BOUNDARY_MARGIN: f32 = 40.0;  // distance from edge where force kicks in
-    pub const BOUNDARY_FORCE: f32 = 5.0;    // steering strength
+    pub const BOUNDARY_MARGIN: f32 = 40.0; // distance from edge where force kicks in
+    pub const BOUNDARY_FORCE: f32 = 5.0; // steering strength
 
     // Spatial index
     pub const SPATIAL_CELL_SIZE: f32 = 40.0;
@@ -64,8 +64,8 @@ impl Config {
 pub struct Colors;
 
 impl Colors {
-    pub const INSECT: Color = Color::srgb(0.15, 0.15, 0.15);  // dark but visible
-    pub const BIRD: Color = Color::srgb(0.6, 0.48, 0.38);      // light brown
+    pub const INSECT: Color = Color::srgb(0.15, 0.15, 0.15); // dark but visible
+    pub const BIRD: Color = Color::srgb(0.6, 0.48, 0.38); // light brown
     pub const BACKGROUND: Color = Color::srgb(0.88, 0.92, 0.97); // pale sky white
-    pub const GROUND: Color = Color::srgb(0.35, 0.45, 0.25);       // muted green
+    pub const GROUND: Color = Color::srgb(0.35, 0.45, 0.25); // muted green
 }

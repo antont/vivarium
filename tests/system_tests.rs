@@ -9,6 +9,7 @@ use vivarium::systems::flocking::flocking_system;
 use vivarium::systems::movement::movement_system;
 use vivarium::systems::predator::predator_sight_system;
 use vivarium::systems::spatial_update::rebuild_spatial_index;
+use vivarium::wind::Wind;
 
 use bevy::time::TimeUpdateStrategy;
 
@@ -21,6 +22,7 @@ fn test_app() -> App {
         std::time::Duration::from_secs_f64(1.0 / 60.0),
     ));
     app.insert_resource(SpatialIndex::new(Config::SPATIAL_CELL_SIZE));
+    app.insert_resource(Wind::default());
     app
 }
 

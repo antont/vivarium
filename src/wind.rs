@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use bevy::color::palettes::css;
-use crate::components::{TreeAnchor, TreeSegment};
+use crate::components::{BaseLocalRotation, TreeSegment};
 use crate::config::Config;
 
 /// Marker for the wind indicator UI text.
@@ -58,31 +58,24 @@ pub fn wind_update_system(time: Res<Time>, mut wind: ResMut<Wind>) {
 
 pub fn wind_tree_system(
     wind: Res<Wind>,
-    mut trees: Query<(&mut Transform, &TreeAnchor), With<TreeSegment>>,
+    mut segments: Query<(&mut Transform, &BaseLocalRotation), With<TreeSegment>>,
 ) {
+    // Wind tilt axis in world space (perpendicular to horizontal wind direction)
     let wind_horizontal = Vec3::new(wind.direction.x, 0.0, wind.direction.z);
     if wind_horizontal.length_squared() < f32::EPSILON {
         return;
     }
-
-    // Bend axis: perpendicular to wind direction in horizontal plane
     let tilt_axis = wind_horizontal.normalize().cross(Vec3::Y);
     if tilt_axis.length_squared() < f32::EPSILON {
         return;
     }
-    let tilt_axis = tilt_axis.normalize();
-    let bend_per_unit = wind.strength * Config::WIND_TREE_BEND_FACTOR;
 
-    for (mut transform, anchor) in &mut trees {
-        // Height above tree root determines how much this segment bends
-        let height = anchor.local_offset.y.max(0.0);
-        let bend_angle = bend_per_unit * height;
-        let bend_rot = Quat::from_axis_angle(tilt_axis, bend_angle);
+    // Small per-segment bend — hierarchy accumulates this across all ancestors
+    let bend_per_segment = wind.strength * Config::WIND_TREE_BEND_FACTOR;
+    let wind_tilt = Quat::from_axis_angle(tilt_axis.normalize(), bend_per_segment);
 
-        // Rotate offset around the tree root — higher parts swing further
-        transform.translation = anchor.root + bend_rot * anchor.local_offset;
-        // Also tilt the segment itself
-        transform.rotation = bend_rot * anchor.base_rotation;
+    for (mut transform, base) in &mut segments {
+        transform.rotation = wind_tilt * base.0;
     }
 }
 

@@ -1,16 +1,10 @@
 use bevy::prelude::*;
 use rand::Rng;
-use crate::components::{TreeAnchor, TreeSegment};
+use crate::components::{BaseLocalRotation, TreeSegment};
 
 /// A simple L-system tree generator.
 /// Rules: F → F[+F]F[-F]F  (branching pattern)
 /// Symbols: F = forward, + = turn right, - = turn left, [ = push, ] = pop
-
-struct Segment {
-    start: Vec3,
-    end: Vec3,
-    radius: f32,
-}
 
 struct LSystem {
     axiom: String,
@@ -37,78 +31,10 @@ impl LSystem {
         }
         current
     }
-
-    fn interpret(&self, instructions: &str) -> (Vec<Segment>, Vec<Vec3>) {
-        let mut segments = Vec::new();
-        let mut leaves = Vec::new();
-        let mut pos = Vec3::ZERO;
-        let mut dir = Vec3::Y; // grow upward
-        let mut right = Vec3::X;
-        let mut stack: Vec<(Vec3, Vec3, Vec3, f32, f32)> = Vec::new();
-        let mut length = self.length;
-        let mut radius = self.radius;
-        let mut rng = rand::rng();
-
-        for ch in instructions.chars() {
-            match ch {
-                'F' => {
-                    // Add slight random wobble
-                    let wobble = Vec3::new(
-                        rng.random_range(-0.1..0.1),
-                        rng.random_range(-0.05..0.05),
-                        rng.random_range(-0.1..0.1),
-                    );
-                    let actual_dir = (dir + wobble).normalize_or_zero();
-                    let end = pos + actual_dir * length;
-                    segments.push(Segment {
-                        start: pos,
-                        end,
-                        radius,
-                    });
-                    pos = end;
-                }
-                '+' => {
-                    // Rotate around a random-ish axis (not just one plane)
-                    let axis = right;
-                    let rot = Quat::from_axis_angle(axis, self.angle);
-                    dir = rot * dir;
-                    right = rot * right;
-                }
-                '-' => {
-                    let axis = right;
-                    let rot = Quat::from_axis_angle(axis, -self.angle);
-                    dir = rot * dir;
-                    right = rot * right;
-                }
-                '[' => {
-                    stack.push((pos, dir, right, length, radius));
-                    length *= self.shrink;
-                    radius *= self.radius_shrink;
-                    // Twist around the up axis for 3D spread
-                    let twist = Quat::from_axis_angle(Vec3::Y, rng.random_range(0.5..2.5));
-                    dir = twist * dir;
-                    right = twist * right;
-                }
-                ']' => {
-                    // Leaf at branch tip
-                    leaves.push(pos);
-                    if let Some((p, d, r, l, rad)) = stack.pop() {
-                        pos = p;
-                        dir = d;
-                        right = r;
-                        length = l;
-                        radius = rad;
-                    }
-                }
-                _ => {}
-            }
-        }
-
-        (segments, leaves)
-    }
 }
 
-/// Spawn a procedural L-system tree at the given position.
+/// Spawn a procedural L-system tree at the given position using parent-child hierarchy.
+/// Each segment is a child of the previous one, so wind rotation accumulates naturally.
 pub fn spawn_tree(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
@@ -119,7 +45,7 @@ pub fn spawn_tree(
     let lsystem = LSystem {
         axiom: "F".to_string(),
         iterations: 3,
-        angle: 1.2, // ~26 degrees
+        angle: 1.2,
         length: 10.0 * scale,
         shrink: 0.65,
         radius: 2.0 * scale,
@@ -127,7 +53,6 @@ pub fn spawn_tree(
     };
 
     let instructions = lsystem.generate();
-    let (segments, leaves) = lsystem.interpret(&instructions);
 
     let bark_material = materials.add(StandardMaterial {
         base_color: Color::srgb(0.35, 0.25, 0.15),
@@ -141,47 +66,112 @@ pub fn spawn_tree(
         ..default()
     });
 
-    // Spawn each branch segment as a cylinder
-    for seg in &segments {
-        let mid = (seg.start + seg.end) / 2.0;
-        let diff = seg.end - seg.start;
-        let len = diff.length();
-        if len < f32::EPSILON {
-            continue;
+    // Root anchor entity at tree base
+    let root = commands.spawn(Transform::from_translation(position)).id();
+
+    let mut current_parent = root;
+    let mut segment_length = lsystem.length;
+    let mut segment_radius = lsystem.radius;
+    let mut pending_rotation = Quat::IDENTITY;
+    let mut rng = rand::rng();
+
+    // Stack: (parent entity, segment length, radius, pending rotation)
+    let mut stack: Vec<(Entity, f32, f32, Quat)> = Vec::new();
+
+    for ch in instructions.chars() {
+        match ch {
+            'F' => {
+                // Add slight random wobble
+                let wobble_axis = Vec3::new(
+                    rng.random_range(-0.1..0.1),
+                    rng.random_range(-0.05..0.05),
+                    rng.random_range(-0.1..0.1),
+                )
+                .normalize_or_zero();
+                let wobble = if wobble_axis != Vec3::ZERO {
+                    Quat::from_axis_angle(wobble_axis, 0.05)
+                } else {
+                    Quat::IDENTITY
+                };
+
+                let local_rotation = pending_rotation * wobble;
+                pending_rotation = Quat::IDENTITY;
+
+                // Spawn segment as child of current parent.
+                // Local Y = growth direction. The segment entity sits at the
+                // parent's tip and is rotated by accumulated turns.
+                let segment = commands
+                    .spawn((
+                        TreeSegment,
+                        BaseLocalRotation(local_rotation),
+                        Transform::from_rotation(local_rotation),
+                    ))
+                    .id();
+                commands.entity(current_parent).add_child(segment);
+
+                // Cylinder mesh centered at half-height (visual only, no TreeSegment)
+                let mesh_child = commands
+                    .spawn((
+                        Mesh3d(meshes.add(Cylinder::new(segment_radius, segment_length))),
+                        MeshMaterial3d(bark_material.clone()),
+                        Transform::from_translation(Vec3::new(0.0, segment_length / 2.0, 0.0)),
+                    ))
+                    .id();
+                commands.entity(segment).add_child(mesh_child);
+
+                // Tip entity at the top of this segment — next segment attaches here
+                let tip = commands
+                    .spawn(Transform::from_translation(Vec3::new(
+                        0.0,
+                        segment_length,
+                        0.0,
+                    )))
+                    .id();
+                commands.entity(segment).add_child(tip);
+
+                current_parent = tip;
+            }
+            '+' => {
+                pending_rotation =
+                    pending_rotation * Quat::from_axis_angle(Vec3::X, lsystem.angle);
+            }
+            '-' => {
+                pending_rotation =
+                    pending_rotation * Quat::from_axis_angle(Vec3::X, -lsystem.angle);
+            }
+            '[' => {
+                stack.push((
+                    current_parent,
+                    segment_length,
+                    segment_radius,
+                    pending_rotation,
+                ));
+                segment_length *= lsystem.shrink;
+                segment_radius *= lsystem.radius_shrink;
+                // Twist around growth axis for 3D spread
+                let twist = Quat::from_axis_angle(Vec3::Y, rng.random_range(0.5..2.5));
+                pending_rotation = twist;
+            }
+            ']' => {
+                // Spawn leaf at current tip
+                let leaf_size = 2.0 * scale;
+                let leaf = commands
+                    .spawn((
+                        Mesh3d(meshes.add(Sphere::new(leaf_size))),
+                        MeshMaterial3d(leaf_material.clone()),
+                        Transform::default(),
+                    ))
+                    .id();
+                commands.entity(current_parent).add_child(leaf);
+
+                if let Some((parent, len, rad, rot)) = stack.pop() {
+                    current_parent = parent;
+                    segment_length = len;
+                    segment_radius = rad;
+                    pending_rotation = rot;
+                }
+            }
+            _ => {}
         }
-        let dir = diff / len;
-
-        // Cylinder is centered at origin along Y axis
-        let rotation = Quat::from_rotation_arc(Vec3::Y, dir);
-
-        let world_pos = position + mid;
-        let transform = Transform::from_translation(world_pos).with_rotation(rotation);
-        commands.spawn((
-            Mesh3d(meshes.add(Cylinder::new(seg.radius, len))),
-            MeshMaterial3d(bark_material.clone()),
-            transform,
-            TreeSegment,
-            TreeAnchor {
-                root: position,
-                local_offset: mid,
-                base_rotation: rotation,
-            },
-        ));
-    }
-
-    // Spawn leaf clusters as spheres at branch tips
-    for &leaf_pos in &leaves {
-        let leaf_size = 2.0 * scale;
-        commands.spawn((
-            Mesh3d(meshes.add(Sphere::new(leaf_size))),
-            MeshMaterial3d(leaf_material.clone()),
-            Transform::from_translation(position + leaf_pos),
-            TreeSegment,
-            TreeAnchor {
-                root: position,
-                local_offset: leaf_pos,
-                base_rotation: Quat::IDENTITY,
-            },
-        ));
     }
 }
