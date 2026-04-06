@@ -95,6 +95,7 @@ pub struct SquirrelState {
     pub path_index: usize,     // current position in path
     pub progress: f32,         // 0..1 lerp between current and next node
     pub timer: f32,
+    pub last_normal: Vec3,     // previous frame's surface normal for stable projection
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -111,6 +112,7 @@ impl Default for SquirrelState {
             path_index: 0,
             progress: 0.0,
             timer: 0.0,
+            last_normal: Vec3::Y,
         }
     }
 }

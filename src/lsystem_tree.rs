@@ -141,8 +141,8 @@ pub fn spawn_tree(
 
                 current_parent = tip;
 
-                // Add nav node at segment tip, linked to the tip entity for live tracking
-                let tip_nav = nav_graph.add_node_with_entity(tip_world, NavNodeKind::Branch, tip);
+                // Add nav node at segment tip with radius for surface projection
+                let tip_nav = nav_graph.add_branch_node(tip_world, tip, segment_radius);
                 nav_graph.add_edge(current_nav_node, tip_nav);
                 current_nav_node = tip_nav;
                 world_pos = tip_world;

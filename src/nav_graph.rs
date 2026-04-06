@@ -14,6 +14,7 @@ pub struct NavNode {
     pub position: Vec3,       // static position (for ground) or initial position (for branches)
     pub kind: NavNodeKind,
     pub entity: Option<Entity>, // for branch nodes: the tip entity to track live position
+    pub radius: f32,          // branch radius at this node (0.0 for ground)
 }
 
 #[derive(Resource)]
@@ -33,15 +34,20 @@ impl NavGraph {
     /// Add a node and return its index.
     pub fn add_node(&mut self, position: Vec3, kind: NavNodeKind) -> usize {
         let idx = self.nodes.len();
-        self.nodes.push(NavNode { position, kind, entity: None });
+        self.nodes.push(NavNode { position, kind, entity: None, radius: 0.0 });
         self.edges.push(Vec::new());
         idx
     }
 
-    /// Add a node linked to a live entity (for wind-bent tree branches).
-    pub fn add_node_with_entity(&mut self, position: Vec3, kind: NavNodeKind, entity: Entity) -> usize {
+    /// Add a branch node linked to a live entity with cylinder radius.
+    pub fn add_branch_node(&mut self, position: Vec3, entity: Entity, radius: f32) -> usize {
         let idx = self.nodes.len();
-        self.nodes.push(NavNode { position, kind, entity: Some(entity) });
+        self.nodes.push(NavNode {
+            position,
+            kind: NavNodeKind::Branch,
+            entity: Some(entity),
+            radius,
+        });
         self.edges.push(Vec::new());
         idx
     }
