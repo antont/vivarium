@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use rand::Rng;
-use crate::components::{Squirrel, SquirrelPhase, SquirrelState};
+use crate::components::{Squirrel, SquirrelIndex, SquirrelPhase, SquirrelState};
 use crate::config::Config;
 use crate::nav_graph::{NavGraph, NavNodeKind};
 
@@ -10,6 +10,7 @@ pub fn spawn_squirrel(
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
     position: Vec3,
+    index: usize,
 ) {
     let s = Config::SQUIRREL_BODY_SCALE;
 
@@ -28,6 +29,7 @@ pub fn spawn_squirrel(
     let root = commands
         .spawn((
             Squirrel,
+            SquirrelIndex(index),
             SquirrelState::default(),
             Transform::from_translation(position),
             Visibility::default(),

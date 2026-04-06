@@ -87,6 +87,10 @@ pub struct BaseLocalRotation(pub Quat);
 #[derive(Component)]
 pub struct Squirrel;
 
+/// Identifies which squirrel this is (0, 1, 2, …) for focus cameras.
+#[derive(Component)]
+pub struct SquirrelIndex(pub usize);
+
 /// Squirrel behavior state machine.
 #[derive(Component)]
 pub struct SquirrelState {

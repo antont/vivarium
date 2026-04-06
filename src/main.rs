@@ -3,7 +3,7 @@ use vivarium::components::*;
 use vivarium::config::{Colors, Config};
 use vivarium::lsystem_tree::spawn_tree;
 use vivarium::nav_graph::NavGraph;
-use vivarium::orbit_camera::{OrbitCamera, orbit_camera_system};
+use vivarium::orbit_camera::{OrbitCamera, CameraMode, orbit_camera_system, camera_mode_system};
 use vivarium::squirrel::{spawn_squirrel, squirrel_behavior_system, squirrel_movement_system};
 use vivarium::spatial::SpatialIndex;
 use vivarium::systems::boundary::boundary_force_system;
@@ -24,6 +24,7 @@ fn main() {
         .insert_resource(ClearColor(Colors::BACKGROUND))
         .insert_resource(SpatialIndex::new(Config::SPATIAL_CELL_SIZE))
         .insert_resource(Wind::default())
+        .insert_resource(CameraMode::default())
         .add_systems(Startup, (setup, setup_wind_indicator))
         .add_systems(
             Update,
@@ -40,7 +41,7 @@ fn main() {
             )
                 .chain(),
         )
-        .add_systems(Update, (orbit_camera_system, wind_indicator_system, squirrel_behavior_system, squirrel_movement_system))
+        .add_systems(Update, (camera_mode_system, orbit_camera_system, wind_indicator_system, squirrel_behavior_system, squirrel_movement_system))
         .add_systems(PostUpdate, boundary_force_system)
         .run();
 }
@@ -91,7 +92,7 @@ fn setup(
     for i in 0..Config::SQUIRREL_COUNT {
         let x = [-10.0, -90.0, 40.0][i % 3];
         let z = [10.0, 70.0, -60.0][i % 3];
-        spawn_squirrel(&mut commands, &mut meshes, &mut materials, Vec3::new(x, ground_y + 3.0, z));
+        spawn_squirrel(&mut commands, &mut meshes, &mut materials, Vec3::new(x, ground_y + 3.0, z), i);
     }
 
     commands.insert_resource(nav_graph);
