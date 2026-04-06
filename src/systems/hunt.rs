@@ -18,7 +18,7 @@ pub fn hunt_system(
             &Predator,
             &mut HuntState,
             &Wander,
-            Option<&BirdNestingState>,
+            &BirdNestingState,
         ),
         With<Bird>,
     >,
@@ -28,15 +28,13 @@ pub fn hunt_system(
     let mut rng = rand::rng();
 
     for (bird_transform, mut velocity, predator, mut hunt, wander, nesting) in &mut birds {
-        // XXX TODO: https://docs.rs/bevy/latest/bevy/ecs/query/trait.QueryFilter.html
-        // Skip birds that aren't in a hunting-capable lifecycle phase
-        if let Some(nesting) = nesting {
-            match nesting.phase {
-                BirdLifecycle::Hunting
-                | BirdLifecycle::HuntingForEgg
-                | BirdLifecycle::Parenting => {}
-                _ => continue,
-            }
+        // Skip birds not in a hunting-capable lifecycle phase.
+        // (Can't use QueryFilter here — phase is an enum field, not a component.)
+        match nesting.phase {
+            BirdLifecycle::Hunting
+            | BirdLifecycle::HuntingForEgg
+            | BirdLifecycle::Parenting => {}
+            _ => continue,
         }
         let bird_pos = bird_transform.translation;
         let forward = velocity.0.normalize_or_zero();

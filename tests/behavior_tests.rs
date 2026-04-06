@@ -118,6 +118,7 @@ fn bird_transitions_to_circling_when_insects_spotted() {
         },
         HuntState::default(),
         Wander { strength: Config::BIRD_WANDER_STRENGTH },
+        BirdNestingState::default(),
     )).id();
 
     // Insect in front of bird, within sight cone
@@ -155,6 +156,7 @@ fn bird_transitions_to_diving_after_circling() {
             target_pos: Vec3::new(30.0, 0.0, 0.0),
         },
         Wander { strength: Config::BIRD_WANDER_STRENGTH },
+        BirdNestingState::default(),
     )).id();
 
     // Insect at target position
@@ -192,6 +194,7 @@ fn bird_dives_faster_than_normal_speed() {
             target_pos: Vec3::new(30.0, 0.0, 0.0),
         },
         Wander { strength: Config::BIRD_WANDER_STRENGTH },
+        BirdNestingState::default(),
     )).id();
 
     // Insect at target
@@ -230,6 +233,7 @@ fn bird_wanders_when_no_insects_visible() {
         },
         HuntState::default(),
         Wander { strength: Config::BIRD_WANDER_STRENGTH },
+        BirdNestingState::default(),
     )).id();
 
     // No insects in the world — bird should wander
@@ -261,6 +265,7 @@ fn bird_stays_searching_when_no_insects() {
         },
         HuntState::default(),
         Wander { strength: Config::BIRD_WANDER_STRENGTH },
+        BirdNestingState::default(),
     )).id();
 
     app.update();
