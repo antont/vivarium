@@ -3,46 +3,19 @@ use vivarium::components::*;
 use vivarium::config::{Colors, Config};
 use vivarium::lsystem_tree::spawn_tree;
 use vivarium::nav_graph::NavGraph;
-use vivarium::orbit_camera::{OrbitCamera, CameraMode, orbit_camera_system, camera_mode_system};
-use vivarium::squirrel::{spawn_squirrel, squirrel_behavior_system, squirrel_movement_system};
-use vivarium::spatial::SpatialIndex;
-use vivarium::systems::boundary::boundary_force_system;
-use vivarium::systems::face_velocity::face_velocity_system;
-use vivarium::systems::brownian::brownian_motion_system;
-use vivarium::systems::eating::eating_system;
-use vivarium::systems::flocking::flocking_system;
-use vivarium::systems::movement::movement_system;
-use vivarium::systems::hunt::hunt_system;
-use vivarium::systems::spatial_update::rebuild_spatial_index;
-use vivarium::systems::swarm_cohesion::swarm_cohesion_system;
-use vivarium::wind::{Wind, wind_update_system, wind_tree_system, setup_wind_indicator, wind_indicator_system};
+use vivarium::orbit_camera::OrbitCamera;
+use vivarium::squirrel::spawn_squirrel;
+use vivarium::wind::setup_wind_indicator;
+use vivarium::VivariumPlugin;
 use rand::Rng;
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
+        .add_plugins(VivariumPlugin)
         .insert_resource(ClearColor(Colors::BACKGROUND))
-        .insert_resource(SpatialIndex::new(Config::SPATIAL_CELL_SIZE))
-        .insert_resource(Wind::default())
-        .insert_resource(CameraMode::default())
         .add_systems(Startup, (setup, setup_wind_indicator))
-        .add_systems(
-            Update,
-            (
-                wind_update_system,
-                rebuild_spatial_index,
-                (brownian_motion_system, swarm_cohesion_system, flocking_system),
-                hunt_system,
-                movement_system,
-                wind_tree_system,
-                face_velocity_system,
-                eating_system,
-                insect_respawn_system,
-            )
-                .chain(),
-        )
-        .add_systems(Update, (camera_mode_system, orbit_camera_system, wind_indicator_system, squirrel_behavior_system, squirrel_movement_system))
-        .add_systems(PostUpdate, boundary_force_system)
+        .add_systems(Update, (vivarium::wind::wind_indicator_system, insect_respawn_system))
         .run();
 }
 
@@ -105,7 +78,6 @@ fn setup(
         ..default()
     });
 
-    // Cone as bird body — tip points along +Y, face_velocity rotates it
     let bird_mesh = meshes.add(Cone {
         radius: Config::BIRD_RADIUS * 0.4,
         height: Config::BIRD_RADIUS * 2.5,
@@ -113,15 +85,15 @@ fn setup(
     let bird_material = materials.add(StandardMaterial {
         base_color: Colors::BIRD,
         unlit: true,
-        cull_mode: None, // visible from both sides
+        cull_mode: None,
         ..default()
     });
 
-    // Store handles as resources for respawning
+    // Store handles for respawning
     commands.insert_resource(InsectMeshHandle(insect_mesh.clone()));
     commands.insert_resource(InsectMaterialHandle(insect_material.clone()));
 
-    // Spawn insects with meshes
+    // Spawn insects
     let mut rng = rand::rng();
     let half = Config::WORLD_HALF_SIZE;
 
@@ -137,9 +109,7 @@ fn setup(
             Insect,
             Transform::from_translation(position),
             Velocity(direction * Config::INSECT_SPEED),
-            BrownianMotion {
-                wander_strength: Config::INSECT_WANDER_STRENGTH,
-            },
+            BrownianMotion { wander_strength: Config::INSECT_WANDER_STRENGTH },
             SwarmCohesion {
                 radius: Config::SWARM_COHESION_RADIUS,
                 weight: Config::SWARM_COHESION_WEIGHT,
@@ -150,7 +120,7 @@ fn setup(
         ));
     }
 
-    // Spawn birds with meshes
+    // Spawn birds
     for _ in 0..Config::BIRD_COUNT {
         let position = Vec3::new(
             rng.random_range(-half * 0.3..half * 0.3),
@@ -173,6 +143,7 @@ fn setup(
                 cohesion_weight: Config::COHESION_WEIGHT,
             },
             HuntState::default(),
+            BirdNestingState::default(),
             Wander { strength: Config::BIRD_WANDER_STRENGTH },
             BoundaryWrap,
             Mesh3d(bird_mesh.clone()),
@@ -190,7 +161,6 @@ fn random_direction(rng: &mut impl Rng) -> Vec3 {
     .normalize_or_zero()
 }
 
-/// Resource handles for respawning insects with meshes.
 #[derive(Resource)]
 struct InsectMeshHandle(Handle<Mesh>);
 
@@ -227,9 +197,7 @@ fn insect_respawn_system(
             Insect,
             Transform::from_translation(position),
             Velocity(direction * Config::INSECT_SPEED),
-            BrownianMotion {
-                wander_strength: Config::INSECT_WANDER_STRENGTH,
-            },
+            BrownianMotion { wander_strength: Config::INSECT_WANDER_STRENGTH },
             SwarmCohesion {
                 radius: Config::SWARM_COHESION_RADIUS,
                 weight: Config::SWARM_COHESION_WEIGHT,

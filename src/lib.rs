@@ -14,6 +14,53 @@ use rand::Rng;
 use components::*;
 use config::Config;
 
+/// Plugin that registers all vivarium simulation systems, resources, and messages.
+/// Add this plugin to any App (main, examples, tests) to get the full simulation.
+/// You still need to provide your own Startup system to spawn entities.
+pub struct VivariumPlugin;
+
+impl Plugin for VivariumPlugin {
+    fn build(&self, app: &mut App) {
+        app.insert_resource(spatial::SpatialIndex::new(Config::SPATIAL_CELL_SIZE))
+            .insert_resource(wind::Wind::default())
+            .insert_resource(orbit_camera::CameraMode::default())
+            .add_message::<InsectEaten>()
+            .add_systems(
+                Update,
+                (
+                    wind::wind_update_system,
+                    systems::spatial_update::rebuild_spatial_index,
+                    (
+                        systems::brownian::brownian_motion_system,
+                        systems::swarm_cohesion::swarm_cohesion_system,
+                        systems::flocking::flocking_system,
+                    ),
+                    systems::hunt::hunt_system,
+                    systems::nesting::bird_fly_to_target_system,
+                    systems::movement::movement_system,
+                    wind::wind_tree_system,
+                    systems::face_velocity::face_velocity_system,
+                    systems::eating::eating_system,
+                    systems::nesting::bird_lifecycle_system,
+                    systems::nesting::hatchling_alert_system,
+                )
+                    .chain(),
+            )
+            .add_systems(
+                Update,
+                (
+                    orbit_camera::camera_mode_system,
+                    orbit_camera::orbit_camera_system,
+                    squirrel::squirrel_hatchling_detection_system,
+                    squirrel::squirrel_behavior_system,
+                    squirrel::squirrel_movement_system,
+                    squirrel::squirrel_flee_system,
+                ),
+            )
+            .add_systems(PostUpdate, systems::boundary::boundary_force_system);
+    }
+}
+
 /// Spawn insect swarm entities. Returns the number spawned.
 pub fn spawn_insects(world: &mut World) -> usize {
     let mut rng = rand::rng();

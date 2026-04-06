@@ -1,18 +1,20 @@
 use bevy::prelude::*;
+use bevy::ecs::message::MessageWriter;
 use std::collections::HashSet;
-use crate::components::{Bird, Insect};
+use crate::components::{Bird, Insect, InsectEaten};
 use crate::config::Config;
 use crate::spatial::SpatialIndex;
 
 pub fn eating_system(
     mut commands: Commands,
     spatial: Res<SpatialIndex>,
-    birds: Query<&Transform, With<Bird>>,
+    birds: Query<(Entity, &Transform), With<Bird>>,
     insects: Query<(Entity, &Transform), With<Insect>>,
+    mut eaten_events: MessageWriter<InsectEaten>,
 ) {
     let mut eaten: HashSet<Entity> = HashSet::new();
 
-    for bird_transform in &birds {
+    for (bird_entity, bird_transform) in &birds {
         let bird_pos = bird_transform.translation;
         let nearby = spatial.get_nearby(bird_pos);
 
@@ -28,6 +30,7 @@ pub fn eating_system(
             if dist < Config::BIRD_EATING_DISTANCE {
                 commands.entity(insect_entity).despawn();
                 eaten.insert(insect_entity);
+                eaten_events.write(InsectEaten { bird: bird_entity });
             }
         }
     }

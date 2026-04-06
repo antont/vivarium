@@ -83,6 +83,62 @@ pub struct TreeSegment;
 #[derive(Component)]
 pub struct BaseLocalRotation(pub Quat);
 
+/// Bird nesting lifecycle — layered above HuntState.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum BirdLifecycle {
+    Hunting,        // normal hunt behavior
+    FlyingToNest,   // steering toward branch node
+    Building,       // sitting at branch, building nest (timer)
+    HuntingForEgg,  // hunting an insect to return and lay egg
+    Incubating,     // sitting on egg (timer)
+    Parenting,      // has hatchling, hunts and delivers food
+    Defending,      // alert received, flying fast to nest
+}
+
+#[derive(Component)]
+pub struct BirdNestingState {
+    pub phase: BirdLifecycle,
+    pub nest: Option<Entity>,
+    pub nest_nav_node: Option<usize>,
+    pub timer: f32,
+    pub insects_eaten: u32,
+}
+
+impl Default for BirdNestingState {
+    fn default() -> Self {
+        Self {
+            phase: BirdLifecycle::Hunting,
+            nest: None,
+            nest_nav_node: None,
+            timer: 0.0,
+            insects_eaten: 0,
+        }
+    }
+}
+
+/// A nest on a tree branch.
+#[derive(Component)]
+pub struct Nest {
+    pub parent_bird: Entity,
+    pub nav_node: usize,
+    pub has_egg: bool,
+    pub has_hatchling: bool,
+}
+
+/// A baby bird that stays at its nest.
+#[derive(Component)]
+pub struct Hatchling {
+    pub nest: Entity,
+    pub parent_bird: Entity,
+    pub alert: bool,
+}
+
+/// Message: a bird ate an insect.
+#[derive(bevy::ecs::message::Message)]
+pub struct InsectEaten {
+    pub bird: Entity,
+}
+
 /// Marker for squirrel entities.
 #[derive(Component)]
 pub struct Squirrel;
@@ -90,6 +146,13 @@ pub struct Squirrel;
 /// Identifies which squirrel this is (0, 1, 2, …) for focus cameras.
 #[derive(Component)]
 pub struct SquirrelIndex(pub usize);
+
+/// Squirrel is targeting a hatchling.
+#[derive(Component)]
+pub struct SquirrelTarget {
+    pub hatchling: Entity,
+    pub nest_nav_node: usize,
+}
 
 /// Squirrel behavior state machine.
 #[derive(Component)]
@@ -106,6 +169,8 @@ pub struct SquirrelState {
 pub enum SquirrelPhase {
     Idle,
     Moving,
+    Hunting,  // navigating toward a hatchling
+    Fleeing,  // parent arrived, running away
 }
 
 impl Default for SquirrelState {

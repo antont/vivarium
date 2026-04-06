@@ -57,6 +57,16 @@ impl Config {
     pub const SQUIRREL_IDLE_MAX: f32 = 3.0;
     pub const SQUIRREL_BODY_SCALE: f32 = 5.0;
 
+    // Nesting
+    pub const NEST_BUILD_TIME: f32 = 4.0;
+    pub const EGG_HATCH_TIME: f32 = 12.0;
+    pub const NEST_ARRIVAL_DISTANCE: f32 = 5.0;
+    pub const BIRD_DEFEND_SPEED_MULT: f32 = 2.0;
+
+    // Squirrel predation
+    pub const SQUIRREL_HATCHLING_SIGHT_RANGE: f32 = 60.0;
+    pub const HATCHLING_ALERT_RADIUS: f32 = 20.0;
+
     // Navigation
     pub const NAV_GROUND_SPACING: f32 = 40.0;
 

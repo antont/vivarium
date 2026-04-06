@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use rand::Rng;
-use crate::components::{Squirrel, SquirrelIndex, SquirrelPhase, SquirrelState};
+use crate::components::{BirdNestingState, Bird, Hatchling, Squirrel, SquirrelIndex, SquirrelPhase, SquirrelState, SquirrelTarget};
 use crate::config::Config;
 use crate::nav_graph::{NavGraph, NavNodeKind};
 
@@ -149,6 +149,114 @@ pub fn squirrel_behavior_system(
                     state.path.clear();
                 }
             }
+            SquirrelPhase::Hunting => {
+                // Same as Moving — path leads to hatchling's nest
+                if state.path_index >= state.path.len().saturating_sub(1) {
+                    // Arrived at nest — stay briefly, then go idle
+                    state.phase = SquirrelPhase::Idle;
+                    state.timer = rng.random_range(Config::SQUIRREL_IDLE_MIN..Config::SQUIRREL_IDLE_MAX);
+                    state.path.clear();
+                }
+            }
+            SquirrelPhase::Fleeing => {
+                // Same as Moving — path leads away from nest
+                if state.path_index >= state.path.len().saturating_sub(1) {
+                    state.phase = SquirrelPhase::Idle;
+                    state.timer = rng.random_range(Config::SQUIRREL_IDLE_MIN..Config::SQUIRREL_IDLE_MAX);
+                    state.path.clear();
+                }
+            }
+        }
+    }
+}
+
+/// Idle squirrels scan for nearby hatchlings and pathfind toward them.
+pub fn squirrel_hatchling_detection_system(
+    mut commands: Commands,
+    nav: Res<NavGraph>,
+    mut squirrels: Query<(Entity, &Transform, &mut SquirrelState), (With<Squirrel>, Without<SquirrelTarget>)>,
+    hatchlings: Query<(Entity, &Transform, &Hatchling)>,
+) {
+    for (sq_entity, sq_transform, mut state) in &mut squirrels {
+        if state.phase != SquirrelPhase::Idle {
+            continue;
+        }
+
+        // Find closest hatchling within sight range
+        let mut closest: Option<(Entity, f32, usize)> = None;
+        for (h_entity, h_transform, _hatchling) in &hatchlings {
+            let dist = sq_transform.translation.distance(h_transform.translation);
+            if dist < Config::SQUIRREL_HATCHLING_SIGHT_RANGE {
+                let nav_node = nav.nearest_node(h_transform.translation).unwrap_or(0);
+                if closest.is_none() || dist < closest.unwrap().1 {
+                    closest = Some((h_entity, dist, nav_node));
+                }
+            }
+        }
+
+        if let Some((h_entity, _, nest_nav_node)) = closest {
+            let current = nav.nearest_node(sq_transform.translation).unwrap_or(0);
+            if let Some(path) = nav.find_path(current, nest_nav_node) {
+                if path.len() > 1 {
+                    state.path = path;
+                    state.path_index = 0;
+                    state.progress = 0.0;
+                    state.phase = SquirrelPhase::Hunting;
+                    commands.entity(sq_entity).insert(SquirrelTarget {
+                        hatchling: h_entity,
+                        nest_nav_node,
+                    });
+                }
+            }
+        }
+    }
+}
+
+/// When parent bird arrives at nest, nearby hunting squirrels flee.
+pub fn squirrel_flee_system(
+    mut commands: Commands,
+    nav: Res<NavGraph>,
+    birds: Query<(&Transform, &BirdNestingState), With<Bird>>,
+    mut squirrels: Query<(Entity, &Transform, &mut SquirrelState, &SquirrelTarget), With<Squirrel>>,
+) {
+    let mut rng = rand::rng();
+
+    for (sq_entity, sq_transform, mut state, target) in &mut squirrels {
+        if state.phase != SquirrelPhase::Hunting {
+            continue;
+        }
+
+        // Check if parent bird is near the nest
+        let parent_nearby = birds.iter().any(|(bird_transform, nesting)| {
+            if let Some(nav_node) = nesting.nest_nav_node {
+                if nav_node == target.nest_nav_node {
+                    let dist = bird_transform.translation.distance(sq_transform.translation);
+                    return dist < Config::HATCHLING_ALERT_RADIUS * 2.0;
+                }
+            }
+            false
+        });
+
+        if parent_nearby {
+            // Flee: pick a random ground node far away
+            let ground_nodes: Vec<usize> = nav.nodes.iter().enumerate()
+                .filter(|(_, n)| n.kind == NavNodeKind::Ground)
+                .map(|(i, _)| i)
+                .collect();
+
+            if !ground_nodes.is_empty() {
+                let flee_target = ground_nodes[rng.random_range(0..ground_nodes.len())];
+                let current = nav.nearest_node(sq_transform.translation).unwrap_or(0);
+                if let Some(path) = nav.find_path(current, flee_target) {
+                    if path.len() > 1 {
+                        state.path = path;
+                        state.path_index = 0;
+                        state.progress = 0.0;
+                        state.phase = SquirrelPhase::Fleeing;
+                    }
+                }
+            }
+            commands.entity(sq_entity).remove::<SquirrelTarget>();
         }
     }
 }
@@ -220,7 +328,8 @@ pub fn squirrel_movement_system(
     let ground_y = -Config::WORLD_HALF_SIZE;
 
     for (mut transform, mut state) in &mut squirrels {
-        if state.phase != SquirrelPhase::Moving || state.path.len() < 2 {
+        let is_moving = matches!(state.phase, SquirrelPhase::Moving | SquirrelPhase::Hunting | SquirrelPhase::Fleeing);
+        if !is_moving || state.path.len() < 2 || state.path_index + 1 >= state.path.len() {
             continue;
         }
 

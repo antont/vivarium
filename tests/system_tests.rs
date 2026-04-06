@@ -23,6 +23,7 @@ fn test_app() -> App {
     ));
     app.insert_resource(SpatialIndex::new(Config::SPATIAL_CELL_SIZE));
     app.insert_resource(Wind::default());
+    app.add_message::<InsectEaten>();
     app
 }
 
@@ -584,6 +585,52 @@ fn eating_system_does_not_despawn_distant_insect() {
     assert!(
         app.world().get_entity(insect).is_ok(),
         "Insect far from bird should NOT be despawned"
+    );
+}
+
+/// Full pipeline: bird eats insect → InsectEaten message triggers lifecycle transition.
+#[test]
+fn eating_triggers_nesting_lifecycle() {
+    use vivarium::systems::nesting::bird_lifecycle_system;
+    use vivarium::nav_graph::{NavGraph, NavNodeKind};
+
+    let mut app = test_app();
+
+    // Nav graph with a branch node
+    let mut nav = NavGraph::new();
+    nav.add_node(Vec3::new(0.0, -200.0, 0.0), NavNodeKind::Ground);
+    nav.add_node(Vec3::new(0.0, -200.0, 0.0), NavNodeKind::TreeBase);
+    nav.add_edge(0, 1);
+    nav.add_node(Vec3::new(0.0, -190.0, 0.0), NavNodeKind::Branch);
+    nav.add_edge(1, 2);
+    app.insert_resource(nav);
+
+    // eating_system emits InsectEaten, bird_lifecycle_system reads it
+    app.add_systems(Update, (
+        rebuild_spatial_index,
+        eating_system,
+        bird_lifecycle_system,
+    ).chain());
+
+    // Bird in Hunting phase, right next to an insect
+    let bird = app.world_mut().spawn((
+        Bird,
+        Transform::from_translation(Vec3::ZERO),
+        Velocity(Vec3::X * Config::BIRD_SPEED),
+        BirdNestingState::default(), // Hunting
+    )).id();
+
+    app.world_mut().spawn((
+        Insect,
+        Transform::from_translation(Vec3::new(1.0, 0.0, 0.0)),
+    ));
+
+    app.update();
+
+    let nesting = app.world().get::<BirdNestingState>(bird).unwrap();
+    assert_eq!(
+        nesting.phase, BirdLifecycle::FlyingToNest,
+        "Eating an insect should trigger Hunting → FlyingToNest via InsectEaten message"
     );
 }
 

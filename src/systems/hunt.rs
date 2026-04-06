@@ -1,21 +1,43 @@
-use bevy::prelude::*;
-use rand::Rng;
-use crate::components::{Bird, HuntPhase, HuntState, Insect, Predator, Velocity, Wander};
+use crate::components::{
+    Bird, BirdLifecycle, BirdNestingState, HuntPhase, HuntState, Insect, Predator, Velocity, Wander,
+};
 use crate::config::Config;
 use crate::spatial::SpatialIndex;
 use crate::wind::Wind;
+use bevy::prelude::*;
+use rand::Rng;
 
 pub fn hunt_system(
     time: Res<Time>,
     wind: Res<Wind>,
     spatial: Res<SpatialIndex>,
-    mut birds: Query<(&Transform, &mut Velocity, &Predator, &mut HuntState, &Wander), With<Bird>>,
+    mut birds: Query<
+        (
+            &Transform,
+            &mut Velocity,
+            &Predator,
+            &mut HuntState,
+            &Wander,
+            Option<&BirdNestingState>,
+        ),
+        With<Bird>,
+    >,
     insects: Query<(Entity, &Transform), With<Insect>>,
 ) {
     let dt = time.delta_secs();
     let mut rng = rand::rng();
 
-    for (bird_transform, mut velocity, predator, mut hunt, wander) in &mut birds {
+    for (bird_transform, mut velocity, predator, mut hunt, wander, nesting) in &mut birds {
+        // XXX TODO: https://docs.rs/bevy/latest/bevy/ecs/query/trait.QueryFilter.html
+        // Skip birds that aren't in a hunting-capable lifecycle phase
+        if let Some(nesting) = nesting {
+            match nesting.phase {
+                BirdLifecycle::Hunting
+                | BirdLifecycle::HuntingForEgg
+                | BirdLifecycle::Parenting => {}
+                _ => continue,
+            }
+        }
         let bird_pos = bird_transform.translation;
         let forward = velocity.0.normalize_or_zero();
 
