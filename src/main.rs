@@ -14,8 +14,13 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugins(VivariumPlugin)
         .insert_resource(ClearColor(Colors::BACKGROUND))
-        .add_systems(Startup, (setup, setup_wind_indicator))
-        .add_systems(Update, (vivarium::wind::wind_indicator_system, insect_respawn_system))
+        .add_systems(Startup, (setup, setup_wind_indicator, setup_status_ui))
+        .add_systems(Update, (
+            vivarium::wind::wind_indicator_system,
+            insect_respawn_system,
+            status_ui_system,
+            periodic_log_system,
+        ))
         .run();
 }
 
@@ -166,6 +171,149 @@ struct InsectMeshHandle(Handle<Mesh>);
 
 #[derive(Resource)]
 struct InsectMaterialHandle(Handle<StandardMaterial>);
+
+#[derive(Component)]
+struct StatusText;
+
+fn setup_status_ui(mut commands: Commands) {
+    commands.spawn((
+        Text::new(""),
+        TextFont { font_size: 14.0, ..default() },
+        TextColor(Color::srgb(0.15, 0.15, 0.15)),
+        Node {
+            position_type: PositionType::Absolute,
+            top: Val::Px(10.0),
+            left: Val::Px(10.0),
+            ..default()
+        },
+        StatusText,
+    ));
+}
+
+fn status_ui_system(
+    birds: Query<&BirdNestingState, With<Bird>>,
+    insects: Query<&Insect>,
+    nests: Query<&Nest>,
+    hatchlings: Query<&Hatchling>,
+    squirrels: Query<(&SquirrelState, Option<&SquirrelTarget>), With<Squirrel>>,
+    mut text_q: Query<&mut Text, With<StatusText>>,
+) {
+    let Ok(mut text) = text_q.single_mut() else { return };
+
+    let mut phase_counts = [0u32; 7];
+    for nesting in &birds {
+        let idx = match nesting.phase {
+            BirdLifecycle::Hunting => 0,
+            BirdLifecycle::FlyingToNest => 1,
+            BirdLifecycle::Building => 2,
+            BirdLifecycle::HuntingForEgg => 3,
+            BirdLifecycle::Incubating => 4,
+            BirdLifecycle::Parenting => 5,
+            BirdLifecycle::Defending => 6,
+        };
+        phase_counts[idx] += 1;
+    }
+
+    let mut sq_phases = [0u32; 4];
+    let mut sq_targeting = 0u32;
+    for (state, target) in &squirrels {
+        let idx = match state.phase {
+            SquirrelPhase::Idle => 0,
+            SquirrelPhase::Moving => 1,
+            SquirrelPhase::Hunting => 2,
+            SquirrelPhase::Fleeing => 3,
+        };
+        sq_phases[idx] += 1;
+        if target.is_some() { sq_targeting += 1; }
+    }
+
+    let mut lines = Vec::new();
+    lines.push(format!(
+        "Insects: {}  Birds: {}  Nests: {}  Hatchlings: {}",
+        insects.iter().count(), birds.iter().count(),
+        nests.iter().count(), hatchlings.iter().count(),
+    ));
+
+    let labels = ["Hunt", "FlyToNest", "Build", "HuntEgg", "Incubate", "Parent", "Defend"];
+    let bird_parts: Vec<String> = labels.iter().zip(phase_counts.iter())
+        .filter(|(_, c)| **c > 0)
+        .map(|(l, c)| format!("{}:{}", l, c))
+        .collect();
+    if !bird_parts.is_empty() {
+        lines.push(format!("Birds: {}", bird_parts.join(" ")));
+    }
+
+    let sq_labels = ["Idle", "Moving", "Hunting", "Fleeing"];
+    let sq_parts: Vec<String> = sq_labels.iter().zip(sq_phases.iter())
+        .filter(|(_, c)| **c > 0)
+        .map(|(l, c)| format!("{}:{}", l, c))
+        .collect();
+    if !sq_parts.is_empty() {
+        lines.push(format!("Squirrels: {}  targeting:{}", sq_parts.join(" "), sq_targeting));
+    }
+
+    **text = lines.join("\n");
+}
+
+#[derive(Resource, Default)]
+struct LastLogTime(f32);
+
+fn periodic_log_system(
+    birds: Query<&BirdNestingState, With<Bird>>,
+    insects: Query<&Insect>,
+    nests: Query<&Nest>,
+    hatchlings: Query<&Hatchling>,
+    squirrels: Query<(&SquirrelState, Option<&SquirrelTarget>), With<Squirrel>>,
+    time: Res<Time>,
+    mut last_log: Local<LastLogTime>,
+) {
+    let t = time.elapsed_secs();
+    if t - last_log.0 < 5.0 {
+        return;
+    }
+    last_log.0 = t;
+
+    let mut phase_counts = [0u32; 7];
+    for nesting in &birds {
+        let idx = match nesting.phase {
+            BirdLifecycle::Hunting => 0,
+            BirdLifecycle::FlyingToNest => 1,
+            BirdLifecycle::Building => 2,
+            BirdLifecycle::HuntingForEgg => 3,
+            BirdLifecycle::Incubating => 4,
+            BirdLifecycle::Parenting => 5,
+            BirdLifecycle::Defending => 6,
+        };
+        phase_counts[idx] += 1;
+    }
+
+    let labels = ["Hunt", "FlyToNest", "Build", "HuntEgg", "Incubate", "Parent", "Defend"];
+    let bird_summary: Vec<String> = labels.iter().zip(phase_counts.iter())
+        .filter(|(_, c)| **c > 0)
+        .map(|(l, c)| format!("{}:{}", l, c))
+        .collect();
+
+    let mut sq_hunting = 0;
+    let mut sq_fleeing = 0;
+    for (state, _) in &squirrels {
+        match state.phase {
+            SquirrelPhase::Hunting => sq_hunting += 1,
+            SquirrelPhase::Fleeing => sq_fleeing += 1,
+            _ => {}
+        }
+    }
+
+    info!(
+        "[sim] t={:.0}s insects={} birds=[{}] nests={} hatchlings={} sq_hunt={} sq_flee={}",
+        t,
+        insects.iter().count(),
+        bird_summary.join(" "),
+        nests.iter().count(),
+        hatchlings.iter().count(),
+        sq_hunting,
+        sq_fleeing,
+    );
+}
 
 fn insect_respawn_system(
     mut commands: Commands,

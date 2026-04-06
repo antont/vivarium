@@ -25,8 +25,6 @@ fn main() {
         .add_systems(Startup, setup)
         .add_systems(Update, (
             auto_feed_system,
-            nest_visual_system,
-            hatchling_visual_system,
             status_text_system,
             log_state_system,
         ))
@@ -185,55 +183,6 @@ fn auto_feed_system(
 
 #[derive(Component)]
 struct StatusText;
-
-#[derive(Component)]
-struct NestVisual;
-
-#[derive(Component)]
-struct HatchlingVisual;
-
-/// Spawn visual meshes for nests that don't have one yet.
-fn nest_visual_system(
-    mut commands: Commands,
-    nests: Query<(Entity, &Transform), (With<Nest>, Without<NestVisual>)>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-) {
-    for (entity, transform) in &nests {
-        info!("[nesting_demo] Nest spawned at {:?}", transform.translation);
-        let mesh = commands.spawn((
-            Mesh3d(meshes.add(Cylinder::new(3.0, 1.0))),
-            MeshMaterial3d(materials.add(StandardMaterial {
-                base_color: Color::srgb(0.4, 0.25, 0.1),
-                ..default()
-            })),
-            Transform::default(),
-        )).id();
-        commands.entity(entity).insert(NestVisual).add_child(mesh);
-    }
-}
-
-/// Spawn visual meshes for hatchlings that don't have one yet.
-fn hatchling_visual_system(
-    mut commands: Commands,
-    hatchlings: Query<(Entity, &Transform), (With<Hatchling>, Without<HatchlingVisual>)>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-) {
-    for (entity, transform) in &hatchlings {
-        info!("[nesting_demo] Hatchling spawned at {:?}", transform.translation);
-        let mesh = commands.spawn((
-            Mesh3d(meshes.add(Sphere::new(1.5))),
-            MeshMaterial3d(materials.add(StandardMaterial {
-                base_color: Color::srgb(0.9, 0.85, 0.3),
-                unlit: true,
-                ..default()
-            })),
-            Transform::from_translation(Vec3::new(0.0, 1.5, 0.0)),
-        )).id();
-        commands.entity(entity).insert(HatchlingVisual).add_child(mesh);
-    }
-}
 
 /// Log lifecycle transitions periodically for observability.
 fn log_state_system(

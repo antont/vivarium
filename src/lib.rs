@@ -55,6 +55,8 @@ impl Plugin for VivariumPlugin {
                     squirrel::squirrel_behavior_system,
                     squirrel::squirrel_movement_system,
                     squirrel::squirrel_flee_system,
+                    systems::nesting::nest_visual_system,
+                    systems::nesting::hatchling_visual_system,
                 ),
             )
             .add_systems(PostUpdate, systems::boundary::boundary_force_system);

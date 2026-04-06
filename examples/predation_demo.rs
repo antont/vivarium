@@ -26,8 +26,6 @@ fn main() {
         .add_systems(Startup, setup)
         .add_systems(Update, (
             insect_respawn,
-            nest_visual_system,
-            hatchling_visual_system,
             status_text_system,
             log_state_system,
         ))
@@ -229,12 +227,6 @@ struct InsectHandles(Handle<Mesh>, Handle<StandardMaterial>);
 #[derive(Component)]
 struct StatusText;
 
-#[derive(Component)]
-struct NestVisual;
-
-#[derive(Component)]
-struct HatchlingVisual;
-
 fn insect_respawn(
     mut commands: Commands,
     insects: Query<&Insect>,
@@ -268,45 +260,6 @@ fn insect_respawn(
             Mesh3d(handles.0.clone()),
             MeshMaterial3d(handles.1.clone()),
         ));
-    }
-}
-
-fn nest_visual_system(
-    mut commands: Commands,
-    nests: Query<(Entity, &Transform), (With<Nest>, Without<NestVisual>)>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-) {
-    for (entity, _) in &nests {
-        let mesh = commands.spawn((
-            Mesh3d(meshes.add(Cylinder::new(3.0, 1.0))),
-            MeshMaterial3d(materials.add(StandardMaterial {
-                base_color: Color::srgb(0.4, 0.25, 0.1),
-                ..default()
-            })),
-            Transform::default(),
-        )).id();
-        commands.entity(entity).insert(NestVisual).add_child(mesh);
-    }
-}
-
-fn hatchling_visual_system(
-    mut commands: Commands,
-    hatchlings: Query<(Entity, &Transform), (With<Hatchling>, Without<HatchlingVisual>)>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-) {
-    for (entity, _) in &hatchlings {
-        let mesh = commands.spawn((
-            Mesh3d(meshes.add(Sphere::new(1.5))),
-            MeshMaterial3d(materials.add(StandardMaterial {
-                base_color: Color::srgb(0.9, 0.85, 0.3),
-                unlit: true,
-                ..default()
-            })),
-            Transform::from_translation(Vec3::new(0.0, 1.5, 0.0)),
-        )).id();
-        commands.entity(entity).insert(HatchlingVisual).add_child(mesh);
     }
 }
 

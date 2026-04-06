@@ -31,6 +31,7 @@ pub fn eating_system(
                 commands.entity(insect_entity).despawn();
                 eaten.insert(insect_entity);
                 eaten_events.write(InsectEaten { bird: bird_entity });
+                info!("[eating] Bird {:?} ate insect {:?}", bird_entity, insect_entity);
             }
         }
     }
