@@ -1,7 +1,7 @@
 use bevy::core_pipeline::tonemapping::Tonemapping;
 use bevy::prelude::*;
 use vivarium::components::*;
-use vivarium::config::{Colors, Config};
+use vivarium::config::{Colors, Config, SimScale};
 use vivarium::lsystem_tree::spawn_tree;
 use vivarium::nav_graph::NavGraph;
 use vivarium::orbit_camera::OrbitCamera;
@@ -19,6 +19,7 @@ fn main() {
             bevy::render::diagnostic::RenderDiagnosticsPlugin,
         ))
         .add_plugins(VivariumPlugin)
+        .insert_resource(SimScale::default())
         .insert_resource(ClearColor(Colors::BACKGROUND))
         .add_systems(Startup, (setup, setup_wind_indicator, setup_status_ui))
         .add_systems(Update, (
@@ -34,7 +35,15 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    scale: Res<SimScale>,
 ) {
+    let half = scale.size(Config::WORLD_HALF_SIZE);
+    info!("[sim] SIM_SCALE={} world_half={} insects={} birds={} squirrels={}",
+        scale.0, half,
+        scale.count(Config::INSECT_COUNT),
+        scale.count(Config::BIRD_COUNT),
+        scale.count(Config::SQUIRREL_COUNT));
+
     // Orbit camera
     commands.spawn((
         Camera3d::default(),
@@ -54,7 +63,7 @@ fn setup(
     ));
 
     // Ground plane at bottom of world
-    let ground_size = Config::WORLD_HALF_SIZE * 2.0;
+    let ground_size = half * 2.0;
     commands.spawn((
         Mesh3d(meshes.add(Plane3d::new(Vec3::Y, Vec2::splat(ground_size / 2.0)))),
         MeshMaterial3d(materials.add(StandardMaterial {
@@ -62,21 +71,21 @@ fn setup(
             perceptual_roughness: 1.0,
             ..default()
         })),
-        Transform::from_translation(Vec3::new(0.0, -Config::WORLD_HALF_SIZE, 0.0)),
+        Transform::from_translation(Vec3::new(0.0, -half, 0.0)),
     ));
 
     // Build navigation graph and L-system trees
     let mut nav_graph = NavGraph::new();
-    let ground_y = -Config::WORLD_HALF_SIZE;
+    let ground_y = -half;
     spawn_tree(&mut commands, &mut meshes, &mut materials, &mut nav_graph, Vec3::new(0.0, ground_y, 0.0), 1.0);
     spawn_tree(&mut commands, &mut meshes, &mut materials, &mut nav_graph, Vec3::new(-80.0, ground_y, 60.0), 0.8);
     spawn_tree(&mut commands, &mut meshes, &mut materials, &mut nav_graph, Vec3::new(50.0, ground_y, -70.0), 1.2);
     nav_graph.build_ground_nodes();
 
     // Spawn squirrels near tree bases, slightly above ground
-    for i in 0..Config::SQUIRREL_COUNT {
-        let x = [-10.0, -90.0, 40.0][i % 3];
-        let z = [10.0, 70.0, -60.0][i % 3];
+    let tree_bases = [(-10.0, 10.0), (-90.0, 70.0), (40.0, -60.0)];
+    for i in 0..scale.count(Config::SQUIRREL_COUNT) {
+        let (x, z) = tree_bases[i % tree_bases.len()];
         vivarium::squirrel::spawn_squirrel(&mut commands, Vec3::new(x, ground_y + 3.0, z), i);
     }
 
@@ -84,9 +93,8 @@ fn setup(
 
     // Spawn insects (logic only — visuals added by insect_visual_system)
     let mut rng = rand::rng();
-    let half = Config::WORLD_HALF_SIZE;
 
-    for _ in 0..Config::INSECT_COUNT {
+    for _ in 0..scale.count(Config::INSECT_COUNT) {
         let position = Vec3::new(
             rng.random_range(-half..half),
             rng.random_range(-half..half),
@@ -109,7 +117,7 @@ fn setup(
     }
 
     // Spawn birds (logic only — visuals added by bird_visual_system)
-    for _ in 0..Config::BIRD_COUNT {
+    for _ in 0..scale.count(Config::BIRD_COUNT) {
         let position = Vec3::new(
             rng.random_range(-half * 0.3..half * 0.3),
             rng.random_range(-half * 0.3..half * 0.3),
@@ -294,16 +302,17 @@ fn periodic_log_system(
 fn insect_respawn_system(
     mut commands: Commands,
     insects: Query<&Insect>,
+    scale: Res<SimScale>,
 ) {
     let count = insects.iter().count();
-    if count >= Config::MIN_INSECT_COUNT {
+    if count >= scale.count(Config::MIN_INSECT_COUNT) {
         return;
     }
 
     let mut rng = rand::rng();
-    let half = Config::WORLD_HALF_SIZE;
+    let half = scale.size(Config::WORLD_HALF_SIZE);
 
-    for _ in 0..Config::INSECT_RESPAWN_BATCH {
+    for _ in 0..scale.count(Config::INSECT_RESPAWN_BATCH) {
         let position = Vec3::new(
             rng.random_range(-half..half),
             rng.random_range(-half..half),

@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use vivarium::components::*;
-use vivarium::config::Config;
+use vivarium::config::{Config, SimScale};
 use vivarium::spatial::SpatialIndex;
 use vivarium::systems::boundary::boundary_force_system;
 use vivarium::systems::brownian::brownian_motion_system;
@@ -22,6 +22,7 @@ fn test_app() -> App {
         std::time::Duration::from_secs_f64(1.0 / 60.0),
     ));
     app.insert_resource(SpatialIndex::new(Config::SPATIAL_CELL_SIZE));
+    app.insert_resource(SimScale(1.0));
     app.insert_resource(Wind::default());
     app.add_message::<InsectEaten>();
     app

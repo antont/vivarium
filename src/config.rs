@@ -1,5 +1,30 @@
 use bevy::prelude::*;
 
+/// Simulation scale factor, read from `SIM_SCALE` env var (default 1.0).
+/// Multiplies entity counts and world size for stress-testing.
+#[derive(Resource, Clone, Copy)]
+pub struct SimScale(pub f32);
+
+impl Default for SimScale {
+    fn default() -> Self {
+        let scale = std::env::var("SIM_SCALE")
+            .ok()
+            .and_then(|s| s.parse::<f32>().ok())
+            .unwrap_or(1.0)
+            .max(0.1);
+        Self(scale)
+    }
+}
+
+impl SimScale {
+    pub fn count(&self, base: usize) -> usize {
+        ((base as f32) * self.0).round() as usize
+    }
+    pub fn size(&self, base: f32) -> f32 {
+        base * self.0.sqrt()
+    }
+}
+
 pub struct Config;
 
 impl Config {
