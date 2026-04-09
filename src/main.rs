@@ -1,3 +1,4 @@
+use bevy::core_pipeline::tonemapping::Tonemapping;
 use bevy::prelude::*;
 use vivarium::components::*;
 use vivarium::config::{Colors, Config};
@@ -31,6 +32,7 @@ fn setup(
     // Orbit camera
     commands.spawn((
         Camera3d::default(),
+        Tonemapping::None,
         Transform::default(),
         OrbitCamera::default(),
     ));

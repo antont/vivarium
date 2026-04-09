@@ -26,23 +26,41 @@ pub fn bird_visual_system(
     }
 }
 
-/// Add visual mesh directly to insects that don't have one yet.
+/// Add 3D asterisk visual to insects — three thin crossed bars.
 pub fn insect_visual_system(
     mut commands: Commands,
     insects: Query<Entity, (With<Insect>, Without<InsectVisual>)>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
+    let r = Config::INSECT_RADIUS;
+    let a = std::f32::consts::FRAC_PI_4; // 45 degrees
+    let axes = [
+        Quat::IDENTITY,                          // along Z
+        Quat::from_rotation_x(a),                // Z tilted 45° toward Y
+        Quat::from_rotation_x(-a),               // Z tilted 45° toward -Y
+        Quat::from_rotation_y(std::f32::consts::FRAC_PI_2),  // along X
+        Quat::from_rotation_z(a) * Quat::from_rotation_y(std::f32::consts::FRAC_PI_2), // X tilted 45°
+        Quat::from_rotation_z(-a) * Quat::from_rotation_y(std::f32::consts::FRAC_PI_2), // X tilted -45°
+    ];
+
     for entity in &insects {
-        commands.entity(entity).insert((
-            InsectVisual,
-            Mesh3d(meshes.add(Sphere::new(Config::INSECT_RADIUS))),
-            MeshMaterial3d(materials.add(StandardMaterial {
-                base_color: Colors::INSECT,
-                unlit: true,
-                ..default()
-            })),
-        ));
+        let mat = materials.add(StandardMaterial {
+            base_color: Colors::INSECT,
+            unlit: true,
+            ..default()
+        });
+
+        for &rot in &axes {
+            let bar = commands.spawn((
+                Mesh3d(meshes.add(Cuboid::new(r * 0.15, r * 0.15, r * 2.5))),
+                MeshMaterial3d(mat.clone()),
+                Transform::from_rotation(rot),
+            )).id();
+            commands.entity(entity).add_child(bar);
+        }
+
+        commands.entity(entity).insert(InsectVisual);
     }
 }
 
