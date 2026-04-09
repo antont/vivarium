@@ -24,5 +24,5 @@ dist = "dist"
 cargo = false
 
 [tools]
-wasm_bindgen = "0.2.108"
+wasm_bindgen = "0.2.117"
 wasm_opt = "version_116"
