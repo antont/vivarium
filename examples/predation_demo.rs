@@ -83,18 +83,6 @@ fn setup(
         .expect("Should have branch nodes");
     let nest_pos = nav_graph.nodes[branch_node].position;
 
-    // Bird mesh + material
-    let bird_mesh = meshes.add(Cone {
-        radius: Config::BIRD_RADIUS * 0.4,
-        height: Config::BIRD_RADIUS * 2.5,
-    });
-    let bird_material = materials.add(StandardMaterial {
-        base_color: Colors::BIRD,
-        unlit: true,
-        cull_mode: None,
-        ..default()
-    });
-
     // Parent bird — starts in Parenting phase, flying nearby
     let bird = commands.spawn((
         Bird,
@@ -119,8 +107,7 @@ fn setup(
         },
         Wander { strength: Config::BIRD_WANDER_STRENGTH },
         BoundaryWrap,
-        Mesh3d(bird_mesh.clone()),
-        MeshMaterial3d(bird_material.clone()),
+        Visibility::default(),
     )).id();
 
     // Nest on the branch — parented to branch entity so it moves with wind
@@ -163,18 +150,9 @@ fn setup(
     info!("[predation_demo] Bird {:?} parenting at nest {:?} (branch node {})", bird, nest, branch_node);
 
     // Squirrel on the ground near the tree
-    spawn_squirrel(&mut commands, &mut meshes, &mut materials, Vec3::new(20.0, ground_y + 3.0, 20.0), 0);
+    spawn_squirrel(&mut commands, Vec3::new(20.0, ground_y + 3.0, 20.0), 0);
 
     commands.insert_resource(nav_graph);
-
-    // Insect handles for respawn
-    let insect_mesh = meshes.add(Sphere::new(Config::INSECT_RADIUS));
-    let insect_material = materials.add(StandardMaterial {
-        base_color: Colors::INSECT,
-        unlit: true,
-        ..default()
-    });
-    commands.insert_resource(InsectHandles(insect_mesh.clone(), insect_material.clone()));
 
     // Insects for the bird to hunt — enough to reliably find prey
     let mut rng = rand::rng();
@@ -199,8 +177,7 @@ fn setup(
                 weight: Config::SWARM_COHESION_WEIGHT,
             },
             BoundaryWrap,
-            Mesh3d(insect_mesh.clone()),
-            MeshMaterial3d(insect_material.clone()),
+            Visibility::default(),
         ));
     }
 
@@ -221,20 +198,15 @@ fn setup(
     info!("[predation_demo] Setup complete: 1 bird (parenting), 1 squirrel, 1 nest+hatchling, 20 insects");
 }
 
-#[derive(Resource)]
-struct InsectHandles(Handle<Mesh>, Handle<StandardMaterial>);
-
 #[derive(Component)]
 struct StatusText;
 
 fn insect_respawn(
     mut commands: Commands,
     insects: Query<&Insect>,
-    handles: Option<Res<InsectHandles>>,
 ) {
     let count = insects.iter().count();
     if count >= 10 { return; }
-    let Some(handles) = handles else { return; };
     let mut rng = rand::rng();
     for _ in 0..5 {
         let pos = Vec3::new(
@@ -257,8 +229,7 @@ fn insect_respawn(
                 weight: Config::SWARM_COHESION_WEIGHT,
             },
             BoundaryWrap,
-            Mesh3d(handles.0.clone()),
-            MeshMaterial3d(handles.1.clone()),
+            Visibility::default(),
         ));
     }
 }

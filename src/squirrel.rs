@@ -4,29 +4,13 @@ use crate::components::{BirdNestingState, Bird, Hatchling, Squirrel, SquirrelInd
 use crate::config::Config;
 use crate::nav_graph::{NavGraph, NavNodeKind};
 
-/// Spawn a squirrel at a given position with multi-primitive body.
+/// Spawn a squirrel at a given position (logic only — visual added by squirrel_visual_system).
 pub fn spawn_squirrel(
     commands: &mut Commands,
-    meshes: &mut ResMut<Assets<Mesh>>,
-    materials: &mut ResMut<Assets<StandardMaterial>>,
     position: Vec3,
     index: usize,
-) {
-    let s = Config::SQUIRREL_BODY_SCALE;
-
-    let fur = materials.add(StandardMaterial {
-        base_color: Color::srgb(0.55, 0.3, 0.15), // warm reddish-brown
-        unlit: true,
-        ..default()
-    });
-    let dark = materials.add(StandardMaterial {
-        base_color: Color::srgb(0.2, 0.1, 0.05),
-        unlit: true,
-        ..default()
-    });
-
-    // Root entity with behavior
-    let root = commands
+) -> Entity {
+    commands
         .spawn((
             Squirrel,
             SquirrelIndex(index),
@@ -34,72 +18,7 @@ pub fn spawn_squirrel(
             Transform::from_translation(position),
             Visibility::default(),
         ))
-        .id();
-
-    // Body — stretched sphere
-    let body = commands
-        .spawn((
-            Mesh3d(meshes.add(Sphere::new(s * 0.5))),
-            MeshMaterial3d(fur.clone()),
-            Transform::from_scale(Vec3::new(0.7, 0.5, 1.0)),
-        ))
-        .id();
-    commands.entity(root).add_child(body);
-
-    // Head — smaller sphere, forward and up
-    let head = commands
-        .spawn((
-            Mesh3d(meshes.add(Sphere::new(s * 0.3))),
-            MeshMaterial3d(fur.clone()),
-            Transform::from_translation(Vec3::new(0.0, s * 0.25, s * 0.6)),
-        ))
-        .id();
-    commands.entity(root).add_child(head);
-
-    // Ears — two tiny spheres
-    for side in [-1.0_f32, 1.0] {
-        let ear = commands
-            .spawn((
-                Mesh3d(meshes.add(Sphere::new(s * 0.1))),
-                MeshMaterial3d(dark.clone()),
-                Transform::from_translation(Vec3::new(
-                    side * s * 0.2,
-                    s * 0.45,
-                    s * 0.55,
-                )),
-            ))
-            .id();
-        commands.entity(root).add_child(ear);
-    }
-
-    // Tail — pivot at body attachment, then offset the mesh so it extends upward/back
-    let tail_pivot = commands
-        .spawn(Transform::from_translation(Vec3::new(0.0, s * 0.1, -s * 0.3))
-            .with_rotation(Quat::from_axis_angle(Vec3::X, -0.8)))
-        .id();
-    commands.entity(root).add_child(tail_pivot);
-
-    let tail_mesh = commands
-        .spawn((
-            Mesh3d(meshes.add(Sphere::new(s * 0.35))),
-            MeshMaterial3d(fur.clone()),
-            Transform::from_translation(Vec3::new(0.0, s * 0.4, 0.0))
-                .with_scale(Vec3::new(0.4, 1.2, 0.5)),
-        ))
-        .id();
-    commands.entity(tail_pivot).add_child(tail_mesh);
-
-    // Feet — 4 tiny spheres
-    for &(x, z) in &[(-0.3, 0.3), (0.3, 0.3), (-0.3, -0.2), (0.3, -0.2)] {
-        let foot = commands
-            .spawn((
-                Mesh3d(meshes.add(Sphere::new(s * 0.1))),
-                MeshMaterial3d(dark.clone()),
-                Transform::from_translation(Vec3::new(x * s, -s * 0.35, z * s)),
-            ))
-            .id();
-        commands.entity(root).add_child(foot);
-    }
+        .id()
 }
 
 /// Squirrel behavior: pick targets and manage state transitions.

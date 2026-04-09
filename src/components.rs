@@ -173,6 +173,18 @@ pub enum SquirrelPhase {
     Fleeing,  // parent arrived, running away
 }
 
+// Visual markers — presence means the auto-dress system already added meshes.
+#[derive(Component)]
+pub struct BirdVisual;
+#[derive(Component)]
+pub struct InsectVisual;
+#[derive(Component)]
+pub struct SquirrelVisual;
+#[derive(Component)]
+pub struct NestVisual;
+#[derive(Component)]
+pub struct HatchlingVisual;
+
 impl Default for SquirrelState {
     fn default() -> Self {
         Self {

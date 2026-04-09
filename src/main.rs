@@ -4,7 +4,6 @@ use vivarium::config::{Colors, Config};
 use vivarium::lsystem_tree::spawn_tree;
 use vivarium::nav_graph::NavGraph;
 use vivarium::orbit_camera::OrbitCamera;
-use vivarium::squirrel::spawn_squirrel;
 use vivarium::wind::setup_wind_indicator;
 use vivarium::VivariumPlugin;
 use rand::Rng;
@@ -70,35 +69,12 @@ fn setup(
     for i in 0..Config::SQUIRREL_COUNT {
         let x = [-10.0, -90.0, 40.0][i % 3];
         let z = [10.0, 70.0, -60.0][i % 3];
-        spawn_squirrel(&mut commands, &mut meshes, &mut materials, Vec3::new(x, ground_y + 3.0, z), i);
+        vivarium::squirrel::spawn_squirrel(&mut commands, Vec3::new(x, ground_y + 3.0, z), i);
     }
 
     commands.insert_resource(nav_graph);
 
-    // Shared meshes and materials
-    let insect_mesh = meshes.add(Sphere::new(Config::INSECT_RADIUS));
-    let insect_material = materials.add(StandardMaterial {
-        base_color: Colors::INSECT,
-        unlit: true,
-        ..default()
-    });
-
-    let bird_mesh = meshes.add(Cone {
-        radius: Config::BIRD_RADIUS * 0.4,
-        height: Config::BIRD_RADIUS * 2.5,
-    });
-    let bird_material = materials.add(StandardMaterial {
-        base_color: Colors::BIRD,
-        unlit: true,
-        cull_mode: None,
-        ..default()
-    });
-
-    // Store handles for respawning
-    commands.insert_resource(InsectMeshHandle(insect_mesh.clone()));
-    commands.insert_resource(InsectMaterialHandle(insect_material.clone()));
-
-    // Spawn insects
+    // Spawn insects (logic only — visuals added by insect_visual_system)
     let mut rng = rand::rng();
     let half = Config::WORLD_HALF_SIZE;
 
@@ -120,12 +96,11 @@ fn setup(
                 weight: Config::SWARM_COHESION_WEIGHT,
             },
             BoundaryWrap,
-            Mesh3d(insect_mesh.clone()),
-            MeshMaterial3d(insect_material.clone()),
+            Visibility::default(),
         ));
     }
 
-    // Spawn birds
+    // Spawn birds (logic only — visuals added by bird_visual_system)
     for _ in 0..Config::BIRD_COUNT {
         let position = Vec3::new(
             rng.random_range(-half * 0.3..half * 0.3),
@@ -151,8 +126,7 @@ fn setup(
             BirdNestingState::default(),
             Wander { strength: Config::BIRD_WANDER_STRENGTH },
             BoundaryWrap,
-            Mesh3d(bird_mesh.clone()),
-            MeshMaterial3d(bird_material.clone()),
+            Visibility::default(),
         ));
     }
 }
@@ -165,12 +139,6 @@ fn random_direction(rng: &mut impl Rng) -> Vec3 {
     )
     .normalize_or_zero()
 }
-
-#[derive(Resource)]
-struct InsectMeshHandle(Handle<Mesh>);
-
-#[derive(Resource)]
-struct InsectMaterialHandle(Handle<StandardMaterial>);
 
 #[derive(Component)]
 struct StatusText;
@@ -318,17 +286,11 @@ fn periodic_log_system(
 fn insect_respawn_system(
     mut commands: Commands,
     insects: Query<&Insect>,
-    mesh_handle: Option<Res<InsectMeshHandle>>,
-    material_handle: Option<Res<InsectMaterialHandle>>,
 ) {
     let count = insects.iter().count();
     if count >= Config::MIN_INSECT_COUNT {
         return;
     }
-
-    let (Some(mesh_handle), Some(material_handle)) = (mesh_handle, material_handle) else {
-        return;
-    };
 
     let mut rng = rand::rng();
     let half = Config::WORLD_HALF_SIZE;
@@ -351,8 +313,7 @@ fn insect_respawn_system(
                 weight: Config::SWARM_COHESION_WEIGHT,
             },
             BoundaryWrap,
-            Mesh3d(mesh_handle.0.clone()),
-            MeshMaterial3d(material_handle.0.clone()),
+            Visibility::default(),
         ));
     }
 }

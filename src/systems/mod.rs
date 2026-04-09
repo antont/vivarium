@@ -9,3 +9,4 @@ pub mod nesting;
 pub mod predator;
 pub mod spatial_update;
 pub mod swarm_cohesion;
+pub mod visuals;

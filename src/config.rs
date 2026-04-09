@@ -89,4 +89,8 @@ impl Colors {
     pub const BIRD: Color = Color::srgb(0.6, 0.48, 0.38); // light brown
     pub const BACKGROUND: Color = Color::srgb(0.88, 0.92, 0.97); // pale sky white
     pub const GROUND: Color = Color::srgb(0.35, 0.45, 0.25); // muted green
+    pub const SQUIRREL_FUR: Color = Color::srgb(0.55, 0.3, 0.15); // warm reddish-brown
+    pub const SQUIRREL_DARK: Color = Color::srgb(0.2, 0.1, 0.05); // dark brown
+    pub const NEST: Color = Color::srgb(0.4, 0.25, 0.1); // brown
+    pub const HATCHLING: Color = Color::srgb(0.9, 0.85, 0.3); // yellow
 }

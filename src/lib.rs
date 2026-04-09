@@ -57,6 +57,9 @@ impl Plugin for VivariumPlugin {
                     squirrel::squirrel_flee_system,
                     systems::nesting::nest_visual_system,
                     systems::nesting::hatchling_visual_system,
+                    systems::visuals::bird_visual_system,
+                    systems::visuals::insect_visual_system,
+                    systems::visuals::squirrel_visual_system,
                 ),
             )
             .add_systems(PostUpdate, systems::boundary::boundary_force_system);
@@ -88,7 +91,12 @@ pub fn spawn_insects(world: &mut World) -> usize {
             BrownianMotion {
                 wander_strength: Config::INSECT_WANDER_STRENGTH,
             },
+            SwarmCohesion {
+                radius: Config::SWARM_COHESION_RADIUS,
+                weight: Config::SWARM_COHESION_WEIGHT,
+            },
             BoundaryWrap,
+            Visibility::default(),
         ));
     }
 
@@ -126,7 +134,11 @@ pub fn spawn_birds(world: &mut World) -> usize {
                 alignment_weight: Config::ALIGNMENT_WEIGHT,
                 cohesion_weight: Config::COHESION_WEIGHT,
             },
+            HuntState::default(),
+            BirdNestingState::default(),
+            Wander { strength: Config::BIRD_WANDER_STRENGTH },
             BoundaryWrap,
+            Visibility::default(),
         ));
     }
 

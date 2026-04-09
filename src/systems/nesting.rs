@@ -2,16 +2,8 @@ use bevy::prelude::*;
 use bevy::ecs::message::MessageReader;
 use rand::Rng;
 use crate::components::*;
-use crate::config::Config;
+use crate::config::{Colors, Config};
 use crate::nav_graph::{NavGraph, NavNodeKind};
-
-/// Marker: this nest already has a visual mesh.
-#[derive(Component)]
-pub struct NestVisual;
-
-/// Marker: this hatchling already has a visual mesh.
-#[derive(Component)]
-pub struct HatchlingVisual;
 
 /// Spawn visual meshes for nests that don't have one yet.
 pub fn nest_visual_system(
@@ -24,7 +16,7 @@ pub fn nest_visual_system(
         let mesh = commands.spawn((
             Mesh3d(meshes.add(Cylinder::new(3.0, 1.0))),
             MeshMaterial3d(materials.add(StandardMaterial {
-                base_color: Color::srgb(0.4, 0.25, 0.1),
+                base_color: Colors::NEST,
                 ..default()
             })),
             Transform::default(),
@@ -44,7 +36,7 @@ pub fn hatchling_visual_system(
         let mesh = commands.spawn((
             Mesh3d(meshes.add(Sphere::new(1.5))),
             MeshMaterial3d(materials.add(StandardMaterial {
-                base_color: Color::srgb(0.9, 0.85, 0.3),
+                base_color: Colors::HATCHLING,
                 unlit: true,
                 ..default()
             })),

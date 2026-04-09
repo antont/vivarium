@@ -76,19 +76,7 @@ fn setup(
     nav_graph.build_ground_nodes();
     commands.insert_resource(nav_graph);
 
-    // Bird mesh + material
-    let bird_mesh = meshes.add(Cone {
-        radius: Config::BIRD_RADIUS * 0.4,
-        height: Config::BIRD_RADIUS * 2.5,
-    });
-    let bird_material = materials.add(StandardMaterial {
-        base_color: Colors::BIRD,
-        unlit: true,
-        cull_mode: None,
-        ..default()
-    });
-
-    // 2 birds
+    // 2 birds (logic only — visuals added by bird_visual_system)
     commands.spawn((
         Bird,
         Transform::from_translation(Vec3::new(10.0, -10.0, 10.0)),
@@ -106,9 +94,8 @@ fn setup(
         BirdNestingState::default(),
         Wander { strength: Config::BIRD_WANDER_STRENGTH },
         BoundaryWrap,
+        Visibility::default(),
         AutoFeedTimer(0.0),
-        Mesh3d(bird_mesh.clone()),
-        MeshMaterial3d(bird_material.clone()),
     ));
 
     commands.spawn((
@@ -128,9 +115,8 @@ fn setup(
         BirdNestingState::default(),
         Wander { strength: Config::BIRD_WANDER_STRENGTH },
         BoundaryWrap,
+        Visibility::default(),
         AutoFeedTimer(1.5),
-        Mesh3d(bird_mesh.clone()),
-        MeshMaterial3d(bird_material.clone()),
     ));
 
     // Status text

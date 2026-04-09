@@ -1,0 +1,28 @@
+trunk-version = "*"
+
+[build]
+target = "index.html"
+release = false
+dist = "dist"
+public_url = "/vivarium/"
+filehash = true
+inject_scripts = true
+minify = "on_release"
+no_sri = false
+
+[watch]
+watch = []
+ignore = []
+
+[serve]
+addresses = ["127.0.0.1"]
+port = 8080
+open = false
+
+[clean]
+dist = "dist"
+cargo = false
+
+[tools]
+wasm_bindgen = "0.2.108"
+wasm_opt = "version_116"
