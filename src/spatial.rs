@@ -16,8 +16,11 @@ impl SpatialIndex {
         }
     }
 
+    /// Clear all cells but keep allocated memory for reuse.
     pub fn clear(&mut self) {
-        self.map.clear();
+        for bucket in self.map.values_mut() {
+            bucket.clear();
+        }
     }
 
     pub fn insert(&mut self, entity: Entity, position: Vec3) {
@@ -48,5 +51,22 @@ impl SpatialIndex {
             }
         }
         result
+    }
+
+    /// Iterate over all entities in the 3x3x3 neighborhood without allocating.
+    pub fn for_each_nearby(&self, position: Vec3, mut f: impl FnMut(Entity)) {
+        let center = self.cell_key(position);
+        for dx in -1..=1 {
+            for dy in -1..=1 {
+                for dz in -1..=1 {
+                    let key = (center.0 + dx, center.1 + dy, center.2 + dz);
+                    if let Some(entities) = self.map.get(&key) {
+                        for &e in entities {
+                            f(e);
+                        }
+                    }
+                }
+            }
+        }
     }
 }

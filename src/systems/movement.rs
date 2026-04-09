@@ -11,7 +11,7 @@ pub fn movement_system(
     let dt = time.delta_secs();
     let wind_vec = wind.vector();
 
-    for (velocity, mut transform, insect, bird) in &mut query {
+    query.par_iter_mut().for_each(|(velocity, mut transform, insect, bird)| {
         let wind_factor = if insect.is_some() {
             Config::WIND_INSECT_FACTOR
         } else if bird.is_some() {
@@ -20,5 +20,5 @@ pub fn movement_system(
             0.0
         };
         transform.translation += (velocity.0 + wind_vec * wind_factor) * dt;
-    }
+    });
 }

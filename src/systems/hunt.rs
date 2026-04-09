@@ -42,15 +42,14 @@ pub fn hunt_system(
         // Find closest visible insect
         let mut closest_insect: Option<(Vec3, f32)> = None;
         if forward != Vec3::ZERO {
-            let nearby = spatial.get_nearby(bird_pos);
-            for &nearby_entity in &nearby {
+            spatial.for_each_nearby(bird_pos, |nearby_entity| {
                 let Ok((_, insect_transform)) = insects.get(nearby_entity) else {
-                    continue;
+                    return;
                 };
                 let to_insect = insect_transform.translation - bird_pos;
                 let dist = to_insect.length();
                 if dist > predator.sight_range || dist < f32::EPSILON {
-                    continue;
+                    return;
                 }
                 let to_norm = to_insect / dist;
                 let angle = forward.dot(to_norm).clamp(-1.0, 1.0).acos();
@@ -59,7 +58,7 @@ pub fn hunt_system(
                         closest_insect = Some((insect_transform.translation, dist));
                     }
                 }
-            }
+            });
         }
 
         match hunt.phase {

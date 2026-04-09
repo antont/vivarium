@@ -84,21 +84,20 @@ impl Plugin for VivariumPlugin {
                 (
                     wind::wind_update_system,
                     systems::spatial_update::rebuild_spatial_index,
-                    (
-                        systems::brownian::brownian_motion_system,
-                        systems::swarm_cohesion::swarm_cohesion_system,
-                        systems::flocking::flocking_system,
-                    ),
+                    systems::brownian::brownian_motion_system,
+                    systems::swarm_cohesion::swarm_cohesion_system,
+                    systems::flocking::flocking_system,
                     systems::hunt::hunt_system,
                     systems::nesting::bird_fly_to_target_system,
                     systems::movement::movement_system,
                     wind::wind_tree_system,
                     systems::face_velocity::face_velocity_system,
                     systems::eating::eating_system,
-                    systems::nesting::bird_lifecycle_system,
+                    // lifecycle reads InsectEaten events from eating
+                    systems::nesting::bird_lifecycle_system
+                        .after(systems::eating::eating_system),
                     systems::nesting::hatchling_alert_system,
-                )
-                    .chain(),
+                ),
             )
             .add_systems(
                 Update,
