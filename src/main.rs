@@ -12,6 +12,12 @@ use rand::Rng;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
+        .add_plugins((
+            bevy::diagnostic::FrameTimeDiagnosticsPlugin::default(),
+            bevy::diagnostic::EntityCountDiagnosticsPlugin::default(),
+            bevy::diagnostic::LogDiagnosticsPlugin::default(),
+            bevy::render::diagnostic::RenderDiagnosticsPlugin,
+        ))
         .add_plugins(VivariumPlugin)
         .insert_resource(ClearColor(Colors::BACKGROUND))
         .add_systems(Startup, (setup, setup_wind_indicator, setup_status_ui))

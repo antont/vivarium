@@ -185,6 +185,26 @@ pub struct NestVisual;
 #[derive(Component)]
 pub struct HatchlingVisual;
 
+/// Shared mesh and material handles for batched rendering.
+#[derive(Resource)]
+pub struct SharedMeshes {
+    pub bird_mesh: Handle<Mesh>,
+    pub bird_material: Handle<StandardMaterial>,
+    pub insect_bar_mesh: Handle<Mesh>,
+    pub insect_material: Handle<StandardMaterial>,
+    pub nest_mesh: Handle<Mesh>,
+    pub nest_material: Handle<StandardMaterial>,
+    pub hatchling_mesh: Handle<Mesh>,
+    pub hatchling_material: Handle<StandardMaterial>,
+    pub squirrel_body: Handle<Mesh>,
+    pub squirrel_head: Handle<Mesh>,
+    pub squirrel_ear: Handle<Mesh>,
+    pub squirrel_tail: Handle<Mesh>,
+    pub squirrel_foot: Handle<Mesh>,
+    pub squirrel_fur: Handle<StandardMaterial>,
+    pub squirrel_dark: Handle<StandardMaterial>,
+}
+
 impl Default for SquirrelState {
     fn default() -> Self {
         Self {

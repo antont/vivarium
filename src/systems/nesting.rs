@@ -2,23 +2,19 @@ use bevy::prelude::*;
 use bevy::ecs::message::MessageReader;
 use rand::Rng;
 use crate::components::*;
-use crate::config::{Colors, Config};
+use crate::config::Config;
 use crate::nav_graph::{NavGraph, NavNodeKind};
 
 /// Spawn visual meshes for nests that don't have one yet.
 pub fn nest_visual_system(
     mut commands: Commands,
     nests: Query<Entity, (With<Nest>, Without<NestVisual>)>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    shared: Res<SharedMeshes>,
 ) {
     for entity in &nests {
         let mesh = commands.spawn((
-            Mesh3d(meshes.add(Cylinder::new(3.0, 1.0))),
-            MeshMaterial3d(materials.add(StandardMaterial {
-                base_color: Colors::NEST,
-                ..default()
-            })),
+            Mesh3d(shared.nest_mesh.clone()),
+            MeshMaterial3d(shared.nest_material.clone()),
             Transform::default(),
         )).id();
         commands.entity(entity).insert(NestVisual).add_child(mesh);
@@ -29,17 +25,12 @@ pub fn nest_visual_system(
 pub fn hatchling_visual_system(
     mut commands: Commands,
     hatchlings: Query<Entity, (With<Hatchling>, Without<HatchlingVisual>)>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    shared: Res<SharedMeshes>,
 ) {
     for entity in &hatchlings {
         let mesh = commands.spawn((
-            Mesh3d(meshes.add(Sphere::new(1.5))),
-            MeshMaterial3d(materials.add(StandardMaterial {
-                base_color: Colors::HATCHLING,
-                unlit: true,
-                ..default()
-            })),
+            Mesh3d(shared.hatchling_mesh.clone()),
+            MeshMaterial3d(shared.hatchling_material.clone()),
             Transform::from_translation(Vec3::new(0.0, 1.5, 0.0)),
         )).id();
         commands.entity(entity).insert(HatchlingVisual).add_child(mesh);

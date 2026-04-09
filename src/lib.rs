@@ -12,16 +12,70 @@ use bevy::prelude::*;
 use rand::Rng;
 
 use components::*;
-use config::Config;
+use config::{Colors, Config};
 
 /// Plugin that registers all vivarium simulation systems, resources, and messages.
 /// Add this plugin to any App (main, examples, tests) to get the full simulation.
 /// You still need to provide your own Startup system to spawn entities.
 pub struct VivariumPlugin;
 
+fn init_shared_meshes(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    let s = Config::SQUIRREL_BODY_SCALE;
+    let r = Config::INSECT_RADIUS;
+    commands.insert_resource(SharedMeshes {
+        bird_mesh: meshes.add(Cone {
+            radius: Config::BIRD_RADIUS * 0.4,
+            height: Config::BIRD_RADIUS * 2.5,
+        }),
+        bird_material: materials.add(StandardMaterial {
+            base_color: Colors::BIRD,
+            unlit: true,
+            cull_mode: None,
+            ..default()
+        }),
+        insect_bar_mesh: meshes.add(Cuboid::new(r * 0.15, r * 0.15, r * 2.5)),
+        insect_material: materials.add(StandardMaterial {
+            base_color: Colors::INSECT,
+            unlit: true,
+            ..default()
+        }),
+        nest_mesh: meshes.add(Cylinder::new(3.0, 1.0)),
+        nest_material: materials.add(StandardMaterial {
+            base_color: Colors::NEST,
+            ..default()
+        }),
+        hatchling_mesh: meshes.add(Sphere::new(1.5)),
+        hatchling_material: materials.add(StandardMaterial {
+            base_color: Colors::HATCHLING,
+            unlit: true,
+            ..default()
+        }),
+        squirrel_body: meshes.add(Sphere::new(s * 0.5)),
+        squirrel_head: meshes.add(Sphere::new(s * 0.3)),
+        squirrel_ear: meshes.add(Sphere::new(s * 0.1)),
+        squirrel_tail: meshes.add(Sphere::new(s * 0.35)),
+        squirrel_foot: meshes.add(Sphere::new(s * 0.1)),
+        squirrel_fur: materials.add(StandardMaterial {
+            base_color: Colors::SQUIRREL_FUR,
+            unlit: true,
+            ..default()
+        }),
+        squirrel_dark: materials.add(StandardMaterial {
+            base_color: Colors::SQUIRREL_DARK,
+            unlit: true,
+            ..default()
+        }),
+    });
+}
+
 impl Plugin for VivariumPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(spatial::SpatialIndex::new(Config::SPATIAL_CELL_SIZE))
+        app.add_systems(Startup, init_shared_meshes)
+            .insert_resource(spatial::SpatialIndex::new(Config::SPATIAL_CELL_SIZE))
             .insert_resource(wind::Wind::default())
             .insert_resource(orbit_camera::CameraMode::default())
             .add_message::<InsectEaten>()
