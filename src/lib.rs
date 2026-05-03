@@ -1,3 +1,4 @@
+pub mod bird_mesh;
 pub mod components;
 pub mod config;
 pub mod lsystem_tree;
@@ -27,10 +28,7 @@ fn init_shared_meshes(
     let s = Config::SQUIRREL_BODY_SCALE;
     let r = Config::INSECT_RADIUS;
     commands.insert_resource(SharedMeshes {
-        bird_mesh: meshes.add(Cone {
-            radius: Config::BIRD_RADIUS * 0.4,
-            height: Config::BIRD_RADIUS * 2.5,
-        }),
+        bird_mesh: meshes.add(bird_mesh::create_bird_mesh(Config::BIRD_RADIUS * 0.5)),
         bird_material: materials.add(StandardMaterial {
             base_color: Colors::BIRD,
             unlit: true,
@@ -94,8 +92,7 @@ impl Plugin for VivariumPlugin {
                     systems::face_velocity::face_velocity_system,
                     systems::eating::eating_system,
                     // lifecycle reads InsectEaten events from eating
-                    systems::nesting::bird_lifecycle_system
-                        .after(systems::eating::eating_system),
+                    systems::nesting::bird_lifecycle_system.after(systems::eating::eating_system),
                     systems::nesting::hatchling_alert_system,
                 ),
             )
@@ -189,7 +186,9 @@ pub fn spawn_birds(world: &mut World) -> usize {
             },
             HuntState::default(),
             BirdNestingState::default(),
-            Wander { strength: Config::BIRD_WANDER_STRENGTH },
+            Wander {
+                strength: Config::BIRD_WANDER_STRENGTH,
+            },
             BoundaryWrap,
             Visibility::default(),
         ));
