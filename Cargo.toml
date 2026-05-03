@@ -13,6 +13,12 @@ wasm-bindgen = "0.2"
 version = "0.18.1"
 features = ["webgl2"]
 
+[dependencies.bevy_asset]
+version = "0.18.1"
+
+[dependencies.bevy_mesh]
+version = "0.18.1"
+
 [profile.dev]
 opt-level = 1
 
