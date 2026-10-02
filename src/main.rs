@@ -56,7 +56,7 @@ fn setup(
     commands.spawn((
         DirectionalLight {
             illuminance: 10000.0,
-            shadows_enabled: false,
+            shadow_maps_enabled: false,
             ..default()
         },
         Transform::from_rotation(Quat::from_euler(EulerRot::XYZ, -0.5, 0.5, 0.0)),
@@ -162,7 +162,7 @@ struct StatusText;
 fn setup_status_ui(mut commands: Commands) {
     commands.spawn((
         Text::new(""),
-        TextFont { font_size: 14.0, ..default() },
+        TextFont { font_size: FontSize::Px(14.0), ..default() },
         TextColor(Color::srgb(0.15, 0.15, 0.15)),
         Node {
             position_type: PositionType::Absolute,
