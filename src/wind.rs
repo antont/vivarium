@@ -94,7 +94,7 @@ pub fn setup_wind_indicator(mut commands: Commands) {
             parent.spawn((
                 Text::new("Wind: --"),
                 TextFont {
-                    font_size: 20.0,
+                    font_size: FontSize::Px(20.0),
                     ..default()
                 },
                 TextColor(css::WHITE.into()),

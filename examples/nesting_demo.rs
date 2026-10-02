@@ -51,7 +51,7 @@ fn setup(
     commands.spawn((
         DirectionalLight {
             illuminance: 10000.0,
-            shadows_enabled: false,
+            shadow_maps_enabled: false,
             ..default()
         },
         Transform::from_rotation(Quat::from_euler(EulerRot::XYZ, -0.5, 0.5, 0.0)),
@@ -122,7 +122,7 @@ fn setup(
     // Status text
     commands.spawn((
         Text::new("Nesting Demo\n1: overview | Watch birds eat, nest, hatch"),
-        TextFont { font_size: 18.0, ..default() },
+        TextFont { font_size: FontSize::Px(18.0), ..default() },
         TextColor(Color::srgb(0.2, 0.2, 0.2)),
         Node {
             position_type: PositionType::Absolute,
